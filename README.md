@@ -1,167 +1,203 @@
-# Playwright Automation Framework (JavaScript)
+# 🚀 Playwright Automation Framework — CX-Connect
 
-This repository contains a production-ready, highly scalable test automation framework using **Playwright** and **JavaScript** for a MERN stack application. It follows industry best practices, such as the Page Object Model (POM), Custom Fixtures, Environment-based Configurations, dynamic OTP handling, and polymorphic/unified test execution.
+This repository contains a production-ready, highly optimized, and scalable test automation framework using **Playwright** and **JavaScript** for the **CX-Connect** platform. 
+
+It is architected using best-in-class automation patterns, including the **Page Object Model (POM)**, **Custom Fixtures**, **Shared Authentication Session State (Login Once)**, and **Environment-driven Multi-mode execution**.
 
 ---
 
-## 📁 Folder Structure
+## 📁 Clean Directory Structure
 
-The directory layout is organized logically to separate concerns and support a scaling suite of tests:
+The repository is structured to maintain a strict separation of concerns, keeping test specs clean, readable, and highly maintainable:
 
 ```text
 CxConnect/
-├── fixtures/                  # Custom Playwright fixtures
-│   └── baseFixture.js         # Extensions for automatically instantiating Page Objects
-├── pages/                     # Page Object Models (POM) representing UI pages
-│   ├── LoginPage.js           # Selectors and interactions for the Login page
-│   └── DashboardPage.js       # Selectors and interactions for the Dashboard page
-├── tests/                     # Test spec files
-│   └── login.spec.js          # Unified login test case
-├── utils/                     # Utility and helper functions
-│   └── otpHelper.js           # Simulates/Fetches dynamic OTP codes
-├── .env                       # Global default configurations
-├── .env.prod                  # Environment configuration: Production
-├── .env.qa                    # Environment configuration: QA
-├── .env.uat                   # Environment configuration: UAT
-├── package.json               # Dependencies, metadata, and execution scripts
-├── playwright.config.js       # Playwright global configurations
-└── README.md                  # Framework documentation (this file)
+├── fixtures/                           # Custom Playwright fixtures
+│   └── baseFixture.js                  # Pre-instantiates and injects Page Object Models
+├── pages/                              # Page Object Models (POM) - UI Selectors & Actions
+│   ├── LoginPage.js                    # Handles password login, OTP mode switching, and validation
+│   ├── DashboardPage.js                # Selectors and validations for the main dashboard
+│   ├── CampaignPage.js                 # Campaigns management, Outbound page, creation modals
+│   └── ContactListPage.js              # Contact lists, file imports, and list management
+├── tests/                              # Test spec files
+│   ├── auth.setup.js                   # 🔑 One-time authentication setup (saves session state)
+│   ├── login.spec.js                   # Unified login test case (branches by environment config)
+│   ├── password-login.spec.js          # Direct password login test suite
+│   ├── otp-login.spec.js               # Direct OTP authentication test suite
+│   ├── dashboard-authenticated.spec.js # Specs running inside an already logged-in session
+│   ├── campaign.spec.js                # Core campaign management tests
+│   └── campaign-creation-flow.spec.js  # End-to-end multi-step campaign builder flow
+├── utils/                              # Utility and helper functions
+│   └── otpHelper.js                    # Dynamically retrieves/simulates OTP codes
+├── .env.example                        # Template for configuring local environments
+├── package.json                        # Scripts, dependencies, and project metadata
+├── playwright.config.js                # Global Playwright configuration and project engines
+└── README.md                           # Framework documentation (this file)
 ```
 
-### Folder Explanations
-* **`fixtures/`**: Playwright allows extending test contexts. This is used to instantiate Page Objects (`LoginPage`, `DashboardPage`) and inject them into tests. Tests do not need to perform `new LoginPage(page)` manual declarations.
-* **`pages/`**: Contains the Page Object Models. Each page has a single class capturing its elements (as locators) and actions (as methods).
-* **`tests/`**: Contains actual spec files. Tests remain clean of selector definitions and coordinate page actions.
-* **`utils/`**: Shared functions like database queries, data generators, loggers, or OTP retrievals.
+---
+
+## ⚙️ Environment & Authentication Configuration
+
+The framework supports multiple environments (**UAT**, **QA**, **Production**) and authentication modes (**Password** vs **OTP**) via environment variables.
+
+### Local Configuration Setup
+1. Copy the `.env.example` file to create your environment-specific files:
+   * `.env.uat` (for UAT environment)
+   * `.env.qa` (for QA environment)
+   * `.env.prod` (for Production environment)
+2. Fill in the values for the respective environment:
+   ```env
+   TEST_ENV=uat
+   BASE_URL=https://uat.ishancxconnect.com
+   USER_ID=your_username
+   USER_PASSWORD=your_password
+   ADMIN_EMAIL=your_email@yopmail.com
+   ```
+
+### Mode Switching
+* **`TEST_ENV`**: Determines which file (`.env.uat`, `.env.qa`, or `.env.prod`) is loaded.
+* **`LOGIN_TYPE`**: Selects the login route:
+  * `LOGIN_TYPE=password`: Runs User ID + Password login.
+  * `LOGIN_TYPE=otp`: Runs Email + OTP login.
 
 ---
 
-## ⚙️ Environment Configuration
+## 🔐 Session Sharing Strategy (Login Once)
 
-The framework supports multiple environments (**UAT**, **QA**, **PROD**) and authentication mechanisms (**Password** vs **OTP**) via environment variables.
+To avoid logging in before every single test case—which causes test suites to run slowly and increases flakiness—we implement Playwright's `storageState` session-caching:
 
-### Environment Selection
-The environment is selected by setting `TEST_ENV` (defaults to `uat`). Playwright will load:
-1. `.env.${TEST_ENV}` (e.g. `.env.uat`)
-2. `.env` (global defaults)
+```
+                      ┌─────────────────────────────────────────┐
+                      │        npm run test:authenticated       │
+                      └────────────────────┬────────────────────┘
+                                           │
+                                ┌──────────▼──────────┐
+                                │   [setup] project   │
+                                │    auth.setup.js    │
+                                │   ───────────────   │
+                                │   1. Goto /login    │
+                                │   2. Fill User ID   │
+                                │   3. Fill Password  │
+                                │   4. Verify Login   │
+                                │   5. Save state to  │
+                                │     .auth/user.json │
+                                └──────────┬──────────┘
+                                           │  (Runs ONCE)
+                 ┌─────────────────────────▼──────────────────────────────┐
+                 │          [chromium-authenticated] project               │
+                 │         Loads storageState from .auth/user.json        │
+                 │   ──────────────────────────────────────────────────   │
+                 │    Runs all tests directly on the authenticated state  │
+                 │    without visiting the login page again.              │
+                 └────────────────────────────────────────────────────────┘
+```
 
-### Authentication Selection
-The login type is selected via `LOGIN_TYPE` environment variable:
-* `LOGIN_TYPE=password`: Runs the User ID + Password login flow.
-* `LOGIN_TYPE=otp`: Runs the Email + OTP login flow.
+* **`tests/auth.setup.js`** logs in using your configured credentials and saves cookies/localStorage into `playwright/.auth/user.json` (which is excluded from Git).
+* Authenticated specs load this state using `test.use({ storageState: 'playwright/.auth/user.json' })`.
 
 ---
 
-## 🔐 Unified Login Pattern
+## 🚀 Execution Commands
 
-To ensure the **same test runs both login methods without code changes**, we implement a routing/polymorphic layer inside `LoginPage.js`. 
+Pre-configured execution commands are available in [package.json](file:///c:/Users/Ishan/Desktop/CxConnect/package.json):
 
-The test case is written abstractly:
+### Password Login Tests
+Run direct password-based login tests in headed/headless/specific browsers:
+```bash
+# Run headless password login tests
+npm run test:login:password
+
+# Run headed password login tests
+npm run test:login:password:headed
+
+# Run Chromium-only password login tests
+npm run test:login:password:chromium
+```
+
+### OTP Login Tests
+Run email OTP-based login tests:
+```bash
+# Run headless OTP login tests
+npm run test:login:otp
+
+# Run headed OTP login tests
+npm run test:login:otp:headed
+```
+
+### Unified Login Tests (Environment Driven)
+Test the polymorphic login flow across different targets:
+```bash
+# UAT Environment
+npm run test:uat:password
+npm run test:uat:otp
+
+# QA Environment
+npm run test:qa:password
+npm run test:qa:otp
+
+# Production Environment
+npm run test:prod:password
+npm run test:prod:otp
+```
+
+### Authenticated Suite (Using cached session)
+Run tests that bypass the login screen completely and start directly on the authenticated dashboard:
+```bash
+# Run authenticated suite in headless mode
+npm run test:authenticated
+
+# Run authenticated suite in headed mode
+npm run test:authenticated:headed
+
+# Run authenticated suite in Playwright Interactive UI Mode
+npm run test:authenticated:ui
+```
+
+### Campaign Suite
+```bash
+# Run campaign tests
+npm run test:campaign
+
+# Run campaign tests in headed mode
+npm run test:campaign:headed
+
+# Run campaign tests in Playwright Interactive UI Mode
+npm run test:campaign:ui
+```
+
+### General / Report Commands
+```bash
+# View last execution HTML report
+npm run report
+```
+
+---
+
+## 🛠️ Framework Implementation Standards
+
+### 1. Custom Fixtures (`fixtures/baseFixture.js`)
+Instead of manually instantiating page models in every test case:
 ```javascript
-test('Verify login', async ({ loginPage, dashboardPage }) => {
-  await loginPage.login(credentials, OtpHelper.getDynamicOTP);
-  await dashboardPage.expectDashboardLoaded();
+// Before
+const loginPage = new LoginPage(page);
+```
+We use custom fixtures so Page Objects are automatically initialized and passed as arguments directly to tests:
+```javascript
+// Inside tests
+test('Verify Dashboard widgets', async ({ loginPage, dashboardPage }) => {
+  await loginPage.goto();
+  // ...
 });
 ```
 
-Internally, `LoginPage.js` evaluates `process.env.LOGIN_TYPE` and branches:
-```javascript
-async login(credentials, fetchOtpCallback) {
-  const loginType = (process.env.LOGIN_TYPE || 'password').toLowerCase();
-  if (loginType === 'otp') {
-    await this.loginWithEmailOTP(credentials.email, fetchOtpCallback);
-  } else {
-    await this.loginWithUserIdAndPassword(credentials.userId, credentials.password);
-  }
-}
-```
+### 2. Strict Naming Conventions
+* **Page Object files**: Suffix with `Page.js` (e.g. `LoginPage.js`).
+* **Specs files**: Suffix with `.spec.js` (e.g. `campaign.spec.js`).
+* **Locator variables**: camelCase suffixed by control type (e.g. `emailInput`, `submitButton`, `campaignNameField`).
+* **Actions/Methods**: camelCase describing actions (e.g. `goto()`, `loginWithCredentials()`, `createCampaign()`).
 
----
-
-## 🏷️ Naming Conventions
-
-Adhering to strict naming conventions ensures codebase readability and consistency:
-
-1. **Files**:
-   * **Page Objects**: PascalCase suffixing page name (`LoginPage.js`, `DashboardPage.js`).
-   * **Specs**: kebab-case or dot-notation ending with `.spec.js` (`login.spec.js`, `create-campaign.spec.js`).
-   * **Fixtures / Utilities**: camelCase (`baseFixture.js`, `otpHelper.js`).
-
-2. **Locators & Variables**:
-   * **Locators**: camelCase suffixing the control type (`emailInput`, `loginButton`, `errorMessage`).
-   * **Variables**: camelCase (`loginType`, `credentials`).
-
-3. **Classes & Methods**:
-   * **Classes**: PascalCase (`LoginPage`, `OtpHelper`).
-   * **Methods**: camelCase describing the action (`goto`, `loginWithEmailOTP`, `expectLoginSuccess`).
-
----
-
-## 🚀 Commands to Execute Tests
-
-To run tests against different environments and authentication modes, use the pre-configured NPM scripts or raw commands:
-
-### UAT Environment (Default)
-* **Run Password Login**:
-  ```bash
-  npm run test:uat:password
-  ```
-* **Run OTP Login**:
-  ```bash
-  npm run test:uat:otp
-  ```
-
-### QA Environment
-* **Run Password Login**:
-  ```bash
-  npm run test:qa:password
-  ```
-* **Run OTP Login**:
-  ```bash
-  npm run test:qa:otp
-  ```
-
-### Production Environment
-* **Run Password Login**:
-  ```bash
-  npm run test:prod:password
-  ```
-* **Run OTP Login**:
-  ```bash
-  npm run test:prod:otp
-  ```
-
-### General / Debug Commands
-* **Run in Headed Mode**:
-  ```bash
-  npx playwright test --headed
-  ```
-* **Run in Playwright UI Mode**:
-  ```bash
-  npx playwright test --ui
-  ```
-* **Show HTML Report**:
-  ```bash
-  npm run report
-  ```
-
----
-
-## 📈 Scalability Recommendations
-
-For a MERN stack application, as the automation suite grows to hundreds of tests, implement the following architected strategies:
-
-1. **Storage State & Authentication Sharing**:
-   * Use a global authentication setup (via Playwright projects) to log in once at the start of execution, write cookies and storage state to a JSON file (e.g. `playwright/.auth/user.json`), and reuse that state across all specs. This reduces execution times by avoiding logging in before every single test.
-
-2. **API-Based Seeding (No UI Dependency)**:
-   * To test features like Campaign Management or IVR routing, do not create prerequisite data (users, campaigns) via the UI. Seed them by executing API requests inside a `beforeAll` block, then run the UI test, and delete them via API in `afterAll`.
-
-3. **Database Helper integration**:
-   * Connect to the MongoDB (or PostgreSQL) backend directly from test hooks (e.g. via `mongoose` or `pg` clients) to inspect DB state for validations (like checking if a SMS notification was logged in the collection) or cleaning up test artifacts.
-
-4. **Dynamic Data Generation**:
-   * Use libraries like `@faker-js/faker` to generate unique names, emails, and phone numbers. This prevents test collisions when running specs in parallel.
-
-5. **Parallelism & Sharding**:
-   * Configure `fullyParallel: true` in `playwright.config.js`. When executing in a CI pipeline (GitHub Actions, GitLab CI), shard the tests across multiple runners (e.g., `playwright test --shard=1/3`) to scale compute and minimize build duration.
+### 3. Scalability Best Practices
+* **API Seeding**: Avoid navigating the UI to create preconditions (e.g. creating test contacts or mock campaigns). Use backend API calls inside `test.beforeAll` to seed data and `test.afterAll` to clean up.
+* **No Hardcoded Sleep Timeouts**: Avoid using `page.waitForTimeout()`. Instead, prefer locator-based assertions like `locator.waitFor({ state: 'visible' })` or `expect(locator).toBeVisible()`.
+* **Parallelism**: The configuration is optimized to run test files concurrently. Ensure test cases remain independent of one another.
