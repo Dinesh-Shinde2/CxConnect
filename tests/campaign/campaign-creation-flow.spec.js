@@ -1,31 +1,123 @@
 /**
- * Campaign Creation E2E Flow Test
- *
+ * Outbound Campaign E2E Creation Flow Test
+ * ==========================================
  * Complete flow:
- * 1) Login with User ID + Password
- * 2) Navigate to Contact List page via direct URL
- * 3) Click "New List" button
- * 4) Fill contact list name, search & add 5 contacts
- * 5) Save by clicking footer "Add"
- * 6) Navigate to Campaign Manager > Outbound
- * 7) Click "+ New Campaign"
- * 8) Fill all mandatory fields and save
- * 9) Verify campaign appears in list
+ *   1) Login with User ID + Password
+ *   2) Navigate to Contact List page via direct URL
+ *   3) Click "New List" button
+ *   4) Fill contact list name, search & add contacts
+ *   5) Save by clicking footer "Add"
+ *   6) Navigate to Campaign Manager > Outbound
+ *   7) Click "+ New Campaign"
+ *   8) Fill all mandatory fields and save
+ *   9) Verify campaign appears in list
  *
- * Selectors confirmed from live DOM screenshots:
- *   - New List btn:     button with text "New List" (exact)
- *   - Name input:       input[placeholder="Enter a Name"]
- *   - Search leads:     input[placeholder="Search leads by ID, Name or Phone"]
- *   - Add lead btn:     button 'Add' inside a table row  
- *   - Cancel/Add (footer): the Cancel & Add buttons at the bottom of the modal
+ * ╔══════════════════════════════════════════════════════════════════════╗
+ * ║            📋  OUTBOUND CAMPAIGN DATA — FILL THIS IN                ║
+ * ╠══════════════════════════════════════════════════════════════════════╣
+ * ║  Edit the CAMPAIGN_CONFIG block below before running.               ║
+ * ║  Each field maps 1-to-1 to the "Add new Outbound Campaign" form.    ║
+ * ╚══════════════════════════════════════════════════════════════════════╝
+ *
+ * Run commands:
+ *   npx playwright test campaign-creation-flow.spec.js --project=chromium --headed
+ *
+ * Credentials loaded from .env.uat:
+ *   USER_ID=<your_user_id>
+ *   USER_PASSWORD=<your_password>
  */
 
 const { test, expect } = require('../../src/fixtures/baseFixture');
 
+// ══════════════════════════════════════════════════════════════════════════════
+// 📋 CAMPAIGN CONFIG — Edit values here before running this E2E test
+// ══════════════════════════════════════════════════════════════════════════════
+const CAMPAIGN_CONFIG = {
+
+  // ── Contact List ──────────────────────────────────────────────────────────
+  // Names of contacts to search and add to the new contact list.
+  // Add or remove names as needed — each will be searched individually.
+  contacts: [
+    'dinesh shinde',
+    'mrinal patil',
+    'vipul data',
+    'gopal verma',
+    'vivek gangani',
+  ],
+
+  // ── Campaign Name ─────────────────────────────────────────────────────────
+  // Must be unique every time (the UI rejects duplicate names).
+  // 'auto' = auto-generate using random number (e.g. AutoCamp84712)
+  // OR set a fixed name like: 'OBCamp01'
+  campaignName: 'auto',    // ← change to 'OBCamp01' or any unique name
+
+  // ── Campaign Mode ─────────────────────────────────────────────────────────
+  // Exact label as it appears in the "Campaign mode" dropdown.
+  // Common values: 'Preview', 'Progressive', 'Power'
+  // null = pick first available option automatically
+  campaignMode: 'Preview', // ← 'Preview' | 'Progressive' | 'Power' | null
+
+  // ── Contact List (for campaign) ───────────────────────────────────────────
+  // The contact list created above is auto-linked.
+  // Set to null to let the test use the freshly created list name.
+  // OR set to an existing list name: 'MyExistingList'
+  contactList: null,       // ← null = use newly created list | 'ExistingListName'
+
+  // ── Caller ID ────────────────────────────────────────────────────────────
+  // Exact Caller ID as it appears in the dropdown.
+  // Example: '+912269054596', '+912269054593'
+  // null = pick first available option automatically
+  callerId: null,          // ← e.g. '+912269054596' | null (first available)
+
+  // ── Queue ─────────────────────────────────────────────────────────────────
+  // Exact queue name as it appears in the dropdown.
+  // Example: 'Camp Queue 2', '24x7 Online Support', 'Doctors Direct'
+  // null = pick first available option automatically
+  queue: null,             // ← e.g. 'Camp Queue 2' | null (first available)
+
+  // ── Dial Ratio ────────────────────────────────────────────────────────────
+  // Only active when Campaign Mode is NOT Preview.
+  // Example: '1', '2', '3'
+  // null = pick first available option automatically
+  dialRatio: null,         // ← e.g. '2' | null (first available)
+
+  // ── Retries ───────────────────────────────────────────────────────────────
+  // Number of retry attempts (numeric input).
+  retries: '3',            // ← any number as a string, e.g. '3'
+
+  // ── Max Wait Time ─────────────────────────────────────────────────────────
+  // Maximum wait time in seconds (numeric input).
+  maxWaitTime: '30',       // ← any number as a string, e.g. '30'
+
+  // ── DND Check ────────────────────────────────────────────────────────────
+  // Exact label: 'Yes' or 'No'
+  dndCheck: 'No',          // ← 'Yes' | 'No'
+};
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── Resolve campaign name ─────────────────────────────────────────────────────
+const resolvedCampaignName =
+  CAMPAIGN_CONFIG.campaignName === 'auto'
+    ? 'AutoCamp' + Math.floor(Math.random() * 99999)
+    : CAMPAIGN_CONFIG.campaignName;
+
+// ── Helper: pick first visible option from an open dropdown ──────────────────
+async function pickFirstOption(page, labelText) {
+  await page.waitForTimeout(1200);
+  const firstOption = page.locator('li.flex.items-center.gap-3').first();
+  if (await firstOption.count() > 0) {
+    const text = await firstOption.textContent();
+    console.log(`     Picked (first available): "${text?.trim()}"`);
+    await firstOption.click({ force: true });
+  } else {
+    console.warn(`  ⚠️  No options found for "${labelText}"`);
+  }
+}
+
 test.describe('Campaign E2E Creation Flow', () => {
   test.describe.configure({ mode: 'serial', retries: 0 });
 
-  test('E2E_CAMP_001 | Complete Campaign Creation Flow', async ({ loginPage, campaignPage, page }) => {
+  test('E2E_CAMP_001 | Complete Outbound Campaign Creation Flow', async ({ loginPage, campaignPage, page }) => {
     test.setTimeout(120000);
 
     // ── STEP 1-2: Login ──────────────────────────────────────────────────────
@@ -50,7 +142,7 @@ test.describe('Campaign E2E Creation Flow', () => {
     await page.getByRole('button', { name: 'New List', exact: true }).click();
     await page.waitForTimeout(1500);
 
-    // Confirm modal opened by waiting for "Enter a Name" placeholder
+    // Confirm modal opened
     const nameInput = page.locator('input[placeholder="Enter a Name"]');
     await nameInput.waitFor({ state: 'visible', timeout: 10000 });
     console.log('✅ "Add New Contact List" modal is open');
@@ -60,24 +152,20 @@ test.describe('Campaign E2E Creation Flow', () => {
     console.log(`[Step 7] Contact list name: "${uniqueListName}"`);
     await nameInput.fill(uniqueListName);
 
-    // ── STEP 7b: Search and add 5 contacts ────────────────────────────────────
-    // The search is a combobox — clicking opens <input>, Escape closes it.
-    // Strategy: keep it open between contacts; if it closes after Add, reopen by clicking the placeholder.
+    // ── STEP 7b: Search and add contacts ──────────────────────────────────────
+    // Contacts list comes from CAMPAIGN_CONFIG.contacts — edit that array to change who is added.
+    // Strategy: keep combobox open between adds; reopen if it closes after clicking Add.
     const searchInput = page.locator('input[placeholder="Search leads by ID, Name or Phone"]');
-    // The visible trigger when the combobox is closed (shows placeholder text)
     const searchTrigger = page.locator('text=Search leads by ID, Name or Phone').first();
-    const contacts = ['dinesh shinde', 'mrinal patil', 'vipul data', 'gopal verma', 'vivek gangani'];
 
-    for (const contact of contacts) {
+    for (const contact of CAMPAIGN_CONFIG.contacts) {
       console.log(`Searching for: "${contact}"...`);
 
-      // Open combobox if input not visible
+      // Open combobox if not visible
       if (!await searchInput.isVisible()) {
-        // Click the visible placeholder text to reopen
         if (await searchTrigger.isVisible()) {
           await searchTrigger.click();
         } else {
-          // Fallback: click anywhere in the Add Leads section area
           await page.locator('text=Add Leads').click();
         }
         await page.waitForTimeout(500);
@@ -86,9 +174,8 @@ test.describe('Campaign E2E Creation Flow', () => {
       await searchInput.waitFor({ state: 'visible', timeout: 10000 });
       await searchInput.fill('');
       await searchInput.type(contact, { delay: 60 });
-      await page.waitForTimeout(2000); // Wait for API results
+      await page.waitForTimeout(2000); // wait for API results
 
-      // If >1 "Add" buttons: first ones are row-level, last is footer
       const addButtons = page.getByRole('button', { name: 'Add', exact: true });
       const buttonCount = await addButtons.count();
 
@@ -97,7 +184,6 @@ test.describe('Campaign E2E Creation Flow', () => {
         await page.waitForTimeout(800);
         console.log(`  ✅ Added: "${contact}"`);
       } else if (buttonCount === 1) {
-        // Check if result row exists (vs just the footer Add)
         const resultRow = page.locator('tr').filter({ hasText: contact.split(' ')[0] });
         if (await resultRow.count() > 0) {
           await addButtons.first().click({ force: true });
@@ -110,23 +196,20 @@ test.describe('Campaign E2E Creation Flow', () => {
         console.warn(`  ⚠️  No Add button found for "${contact}"`);
       }
 
-      // Just clear the text — do NOT press Escape (it would collapse the combobox)
       await searchInput.fill('');
       await page.waitForTimeout(400);
     }
 
     // ── STEP 8: Save contact list (footer Add) ────────────────────────────────
     console.log('[Step 8] Saving contact list...');
-    // Click the name input to steal focus from the search combobox — this closes
-    // the dropdown WITHOUT closing the modal (Escape closes the entire modal).
+    // Click the name input to steal focus — closes the combobox WITHOUT closing the modal
     await nameInput.click();
     await page.waitForTimeout(600);
 
-    // The footer Add button is the LAST one (larger: px-4 py-2 vs row-level px-3 py-1.5)
+    // Footer Add button is the LAST one (larger padding vs row-level buttons)
     await page.getByRole('button', { name: 'Add', exact: true }).last().click();
     await page.waitForTimeout(3000);
 
-    // Verify in table
     await expect(page.getByText(uniqueListName)).toBeVisible({ timeout: 15000 });
     console.log(`✅ Contact list "${uniqueListName}" saved and visible`);
 
@@ -151,91 +234,111 @@ test.describe('Campaign E2E Creation Flow', () => {
     console.log('✅ Modal open');
 
     // ── STEP 12: Fill all mandatory campaign fields ───────────────────────────
-    const uniqueCampaignName = 'AutoCamp' + Math.floor(Math.random() * 99999);
-    console.log(`[Step 12] Campaign name: "${uniqueCampaignName}"`);
-    await campaignPage.enterCampaignName(uniqueCampaignName);
+    // ── 12a: Campaign Name ────────────────────────────────────────────────────
+    //   Config: CAMPAIGN_CONFIG.campaignName = 'auto' | 'OBCamp01' | ...
+    console.log(`[Step 12a] Campaign name: "${resolvedCampaignName}"`);
+    await campaignPage.enterCampaignName(resolvedCampaignName);
     await page.waitForTimeout(500);
 
-    // Campaign Mode → Preview
-    console.log('  → Mode: Preview');
-    await campaignPage.selectDropdownOption(campaignPage.campaignModeDropdown, 'Preview');
+    // ── 12b: Campaign Mode ────────────────────────────────────────────────────
+    //   Config: CAMPAIGN_CONFIG.campaignMode = 'Preview' | 'Progressive' | 'Power' | null
+    if (CAMPAIGN_CONFIG.campaignMode) {
+      console.log(`  → Campaign Mode: "${CAMPAIGN_CONFIG.campaignMode}"`);
+      await campaignPage.selectDropdownOption(campaignPage.campaignModeDropdown, CAMPAIGN_CONFIG.campaignMode);
+    } else {
+      // Pick first available mode
+      console.log('  → Campaign Mode: picking first available...');
+      await campaignPage.campaignModeDropdown.click();
+      await pickFirstOption(page, 'Campaign Mode');
+    }
     await page.waitForTimeout(800);
 
-    // Contact List → newly created list
-    console.log(`  → Contact List: "${uniqueListName}"`);
-    await campaignPage.selectDropdownOption(campaignPage.contactListDropdown, uniqueListName);
+    // ── 12c: Contact List ─────────────────────────────────────────────────────
+    //   Config: CAMPAIGN_CONFIG.contactList = null (uses newly created) | 'ExistingListName'
+    const listToUse = CAMPAIGN_CONFIG.contactList ?? uniqueListName;
+    console.log(`  → Contact List: "${listToUse}"`);
+    await campaignPage.selectDropdownOption(campaignPage.contactListDropdown, listToUse);
     await page.waitForTimeout(800);
 
-    // Caller ID → first available option
-    console.log('  → Caller ID...');
+    // ── 12d: Caller ID ────────────────────────────────────────────────────────
+    //   Config: CAMPAIGN_CONFIG.callerId = '+912269054596' | null (first available)
+    //   Known UAT values: +912269054593, +912269054596, +912269054597
+    console.log(`  → Caller ID: ${CAMPAIGN_CONFIG.callerId ?? '(first available)'}`);
     await campaignPage.callerIdDropdown.click();
-    await page.waitForTimeout(1200);
-    const firstCallerOption = page.locator('li.flex.items-center.gap-3').first();
-    if (await firstCallerOption.count() > 0) {
-      const callerText = await firstCallerOption.textContent();
-      console.log(`     Picked: "${callerText.trim()}"`);
-      await firstCallerOption.click({ force: true });
+    if (CAMPAIGN_CONFIG.callerId) {
+      const callerOption = page.locator('li, div').filter({ hasText: CAMPAIGN_CONFIG.callerId }).first();
+      await callerOption.waitFor({ state: 'visible', timeout: 5000 });
+      await callerOption.click({ force: true });
+      console.log(`     Selected: "${CAMPAIGN_CONFIG.callerId}"`);
+    } else {
+      await pickFirstOption(page, 'Caller ID');
     }
     await page.waitForTimeout(800);
 
-    // Queue → first available option
-    console.log('  → Queue...');
+    // ── 12e: Queue ────────────────────────────────────────────────────────────
+    //   Config: CAMPAIGN_CONFIG.queue = 'Camp Queue 2' | null (first available)
+    //   Known UAT values: 'Camp Queue 2', '24x7 Online Support', 'Doctors Direct'
+    console.log(`  → Queue: ${CAMPAIGN_CONFIG.queue ?? '(first available)'}`);
     await campaignPage.queueDropdown.click();
-    await page.waitForTimeout(1200);
-    const firstQueueOption = page.locator('li.flex.items-center.gap-3').first();
-    if (await firstQueueOption.count() > 0) {
-      const queueText = await firstQueueOption.textContent();
-      console.log(`     Picked: "${queueText.trim()}"`);
-      await firstQueueOption.click({ force: true });
+    if (CAMPAIGN_CONFIG.queue) {
+      const queueOption = page.locator('li, div').filter({ hasText: CAMPAIGN_CONFIG.queue }).first();
+      await queueOption.waitFor({ state: 'visible', timeout: 5000 });
+      await queueOption.click({ force: true });
+      console.log(`     Selected: "${CAMPAIGN_CONFIG.queue}"`);
+    } else {
+      await pickFirstOption(page, 'Queue');
     }
     await page.waitForTimeout(800);
 
-    // Dial Ratio → first available option (mandatory field present in CampaignPage)
-    // Only click and select if Dial Ratio is enabled (it is disabled in Preview mode)
+    // ── 12f: Dial Ratio ───────────────────────────────────────────────────────
+    //   Config: CAMPAIGN_CONFIG.dialRatio = '2' | null (first available)
+    //   NOTE: Dial Ratio is DISABLED when Campaign Mode = Preview
     const dialRatioVisible = await campaignPage.dialRatioDropdown.isVisible().catch(() => false);
     const dialRatioEnabled = dialRatioVisible && await campaignPage.dialRatioDropdown.isEnabled().catch(() => false);
     if (dialRatioEnabled) {
-      console.log('  → Dial Ratio...');
+      console.log(`  → Dial Ratio: ${CAMPAIGN_CONFIG.dialRatio ?? '(first available)'}`);
       await campaignPage.dialRatioDropdown.click();
-      await page.waitForTimeout(1000);
-      const firstDialOption = page.locator('li.flex.items-center.gap-3, li[class*="option"], [role="option"]').first();
-      if (await firstDialOption.count() > 0) {
-        const dialText = await firstDialOption.textContent();
-        console.log(`     Picked: "${dialText.trim()}"`);
-        await firstDialOption.click({ force: true });
+      if (CAMPAIGN_CONFIG.dialRatio) {
+        const ratioOption = page.locator('li, div').filter({ hasText: CAMPAIGN_CONFIG.dialRatio }).first();
+        await ratioOption.waitFor({ state: 'visible', timeout: 5000 });
+        await ratioOption.click({ force: true });
+      } else {
+        await pickFirstOption(page, 'Dial Ratio');
       }
       await page.waitForTimeout(800);
+    } else {
+      console.log('  → Dial Ratio: skipped (disabled in Preview mode)');
     }
 
-    // Retries — use CampaignPage's proper locator
-    console.log('  → Retries: 3');
+    // ── 12g: Retries ──────────────────────────────────────────────────────────
+    //   Config: CAMPAIGN_CONFIG.retries = '3' | any number string
+    console.log(`  → Retries: ${CAMPAIGN_CONFIG.retries}`);
     const retriesVisible = await campaignPage.retriesInput.isVisible().catch(() => false);
     if (retriesVisible) {
-      await campaignPage.retriesInput.fill('3');
+      await campaignPage.retriesInput.fill(CAMPAIGN_CONFIG.retries);
     }
     await page.waitForTimeout(400);
 
-    // Max Wait Time — use CampaignPage's proper locator
-    console.log('  → Max Wait Time: 30');
+    // ── 12h: Max Wait Time ────────────────────────────────────────────────────
+    //   Config: CAMPAIGN_CONFIG.maxWaitTime = '30' | any number string
+    console.log(`  → Max Wait Time: ${CAMPAIGN_CONFIG.maxWaitTime} sec`);
     const maxWaitVisible = await campaignPage.maxWaitTimeInput.isVisible().catch(() => false);
     if (maxWaitVisible) {
-      await campaignPage.maxWaitTimeInput.fill('30');
+      await campaignPage.maxWaitTimeInput.fill(CAMPAIGN_CONFIG.maxWaitTime);
     }
     await page.waitForTimeout(400);
 
-    // DND Check → No
-    console.log('  → DND Check: No');
-    await campaignPage.selectDropdownOption(campaignPage.dndCheckDropdown, 'No');
+    // ── 12i: DND Check ────────────────────────────────────────────────────────
+    //   Config: CAMPAIGN_CONFIG.dndCheck = 'Yes' | 'No'
+    console.log(`  → DND Check: "${CAMPAIGN_CONFIG.dndCheck}"`);
+    await campaignPage.selectDropdownOption(campaignPage.dndCheckDropdown, CAMPAIGN_CONFIG.dndCheck);
     await page.waitForTimeout(800);
 
-    // ── Diagnostic screenshot before saving ───────────────────────────────────
-    await page.screenshot({ path: 'before-campaign-add.png' });
-
-    // Log whether the Add button is enabled
+    // ── DEBUG: Log Add button state ───────────────────────────────────────────
     const isDisabled = await page.getByRole('button', { name: 'Add', exact: true }).last().getAttribute('disabled');
-    console.log(`[DEBUG] Add button disabled attribute: ${isDisabled}`);
+    console.log(`[DEBUG] Add button disabled: ${isDisabled}`);
     if (isDisabled !== null) {
-      console.warn('⚠️  Add button is still DISABLED — dumping all visible form inputs:');
+      console.warn('⚠️  Add button is still DISABLED — dumping form values:');
       const formValues = await page.evaluate(() => {
         const inputs = document.querySelectorAll('input, select, textarea');
         return Array.from(inputs).map(el => ({
@@ -249,15 +352,15 @@ test.describe('Campaign E2E Creation Flow', () => {
       console.log('Form inputs:', JSON.stringify(formValues, null, 2));
     }
 
-    // ── SAVE CAMPAIGN ─────────────────────────────────────────────────────────
-    console.log('[Save] Clicking last Add button...');
+    // ── STEP 13: Save Campaign ────────────────────────────────────────────────
+    console.log('[Step 13] Clicking Add to save campaign...');
     await page.getByRole('button', { name: 'Add', exact: true }).last().click();
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(3000);
 
-    // ── VERIFY ────────────────────────────────────────────────────────────────
-    console.log('Verifying campaign in table...');
-    await campaignPage.expectCampaignInList(uniqueCampaignName);
-    console.log(`🎉 Campaign "${uniqueCampaignName}" created and verified!`);
+    // ── STEP 14: Verify campaign appears in the list ──────────────────────────
+    console.log('[Step 14] Verifying campaign in table...');
+    await campaignPage.expectCampaignInList(resolvedCampaignName);
+    console.log(`🎉 Campaign "${resolvedCampaignName}" created and verified!`);
   });
 });

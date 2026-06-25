@@ -37,6 +37,12 @@
     "test:campaign:headed": "cross-env TEST_ENV=uat playwright test tests/campaign/campaign.spec.js --project=chromium --headed",
     "test:campaign:ui": "cross-env TEST_ENV=uat playwright test tests/campaign/campaign.spec.js --project=chromium --ui",
 
+    "── INBOUND CAMPAIGN TESTS ──────────────────────────────────": "",
+    "test:campaign:inbound": "cross-env TEST_ENV=uat playwright test tests/campaign/inbound-campaign.spec.js --project=chromium",
+    "test:campaign:inbound:headed": "cross-env TEST_ENV=uat playwright test tests/campaign/inbound-campaign.spec.js --project=chromium --headed",
+    "test:campaign:inbound:ui": "cross-env TEST_ENV=uat playwright test tests/campaign/inbound-campaign.spec.js --project=chromium --ui",
+    "test:campaign:inbound:smoke": "cross-env TEST_ENV=uat playwright test tests/campaign/inbound-campaign.spec.js --project=chromium --grep @smoke",
+
     "── UTILS ───────────────────────────────────────────────────": "",
     "report": "playwright show-report"
   },
