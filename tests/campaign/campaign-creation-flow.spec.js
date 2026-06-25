@@ -20,13 +20,12 @@
  *   - Cancel/Add (footer): the Cancel & Add buttons at the bottom of the modal
  */
 
-const { test, expect } = require('../fixtures/baseFixture');
-const { CampaignPage } = require('../pages/CampaignPage');
+const { test, expect } = require('../../src/fixtures/baseFixture');
 
 test.describe('Campaign E2E Creation Flow', () => {
   test.describe.configure({ mode: 'serial', retries: 0 });
 
-  test('E2E_CAMP_001 | Complete Campaign Creation Flow', async ({ loginPage, page }) => {
+  test('E2E_CAMP_001 | Complete Campaign Creation Flow', async ({ loginPage, campaignPage, page }) => {
     test.setTimeout(120000);
 
     // ── STEP 1-2: Login ──────────────────────────────────────────────────────
@@ -148,7 +147,6 @@ test.describe('Campaign E2E Creation Flow', () => {
 
     // ── STEP 11: Open Add Campaign modal ─────────────────────────────────────
     console.log('[Step 11] Opening Add Campaign modal...');
-    const campaignPage = new CampaignPage(page);
     await campaignPage.openAddCampaignModal();
     console.log('✅ Modal open');
 

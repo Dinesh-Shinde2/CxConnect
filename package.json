@@ -6,26 +6,26 @@
     "test": "playwright test",
 
     "── PASSWORD LOGIN ──────────────────────────────────────────": "",
-    "test:login:password": "cross-env TEST_ENV=uat playwright test tests/password-login.spec.js",
-    "test:login:password:headed": "cross-env TEST_ENV=uat playwright test tests/password-login.spec.js --headed",
-    "test:login:password:chromium": "cross-env TEST_ENV=uat playwright test tests/password-login.spec.js --project=chromium",
+    "test:login:password": "cross-env TEST_ENV=uat playwright test tests/auth/password-login.spec.js",
+    "test:login:password:headed": "cross-env TEST_ENV=uat playwright test tests/auth/password-login.spec.js --headed",
+    "test:login:password:chromium": "cross-env TEST_ENV=uat playwright test tests/auth/password-login.spec.js --project=chromium",
 
     "── OTP LOGIN ───────────────────────────────────────────────": "",
-    "test:login:otp": "cross-env TEST_ENV=uat playwright test tests/otp-login.spec.js",
-    "test:login:otp:headed": "cross-env TEST_ENV=uat playwright test tests/otp-login.spec.js --headed",
-    "test:login:otp:chromium": "cross-env TEST_ENV=uat playwright test tests/otp-login.spec.js --project=chromium",
+    "test:login:otp": "cross-env TEST_ENV=uat playwright test tests/auth/otp-login.spec.js",
+    "test:login:otp:headed": "cross-env TEST_ENV=uat playwright test tests/auth/otp-login.spec.js --headed",
+    "test:login:otp:chromium": "cross-env TEST_ENV=uat playwright test tests/auth/otp-login.spec.js --project=chromium",
 
     "── UNIFIED LOGIN (env-driven) ──────────────────────────────": "",
-    "test:uat:password": "cross-env TEST_ENV=uat LOGIN_TYPE=password playwright test tests/login.spec.js",
-    "test:uat:otp": "cross-env TEST_ENV=uat LOGIN_TYPE=otp playwright test tests/login.spec.js",
-    "test:qa:password": "cross-env TEST_ENV=qa LOGIN_TYPE=password playwright test tests/login.spec.js",
-    "test:qa:otp": "cross-env TEST_ENV=qa LOGIN_TYPE=otp playwright test tests/login.spec.js",
-    "test:prod:password": "cross-env TEST_ENV=prod LOGIN_TYPE=password playwright test tests/login.spec.js",
-    "test:prod:otp": "cross-env TEST_ENV=prod LOGIN_TYPE=otp playwright test tests/login.spec.js",
+    "test:uat:password": "cross-env TEST_ENV=uat LOGIN_TYPE=password playwright test tests/auth/login.spec.js",
+    "test:uat:otp": "cross-env TEST_ENV=uat LOGIN_TYPE=otp playwright test tests/auth/login.spec.js",
+    "test:qa:password": "cross-env TEST_ENV=qa LOGIN_TYPE=password playwright test tests/auth/login.spec.js",
+    "test:qa:otp": "cross-env TEST_ENV=qa LOGIN_TYPE=otp playwright test tests/auth/login.spec.js",
+    "test:prod:password": "cross-env TEST_ENV=prod LOGIN_TYPE=password playwright test tests/auth/login.spec.js",
+    "test:prod:otp": "cross-env TEST_ENV=prod LOGIN_TYPE=otp playwright test tests/auth/login.spec.js",
 
     "── SMOKE TESTS ─────────────────────────────────────────────": "",
-    "test:smoke:password": "cross-env TEST_ENV=uat playwright test tests/password-login.spec.js --grep @smoke",
-    "test:smoke:otp": "cross-env TEST_ENV=uat playwright test tests/otp-login.spec.js --grep @smoke",
+    "test:smoke:password": "cross-env TEST_ENV=uat playwright test tests/auth/password-login.spec.js --grep @smoke",
+    "test:smoke:otp": "cross-env TEST_ENV=uat playwright test tests/auth/otp-login.spec.js --grep @smoke",
 
     "── AUTHENTICATED TESTS ─────────────────────────────────────": "",
     "test:authenticated": "cross-env TEST_ENV=uat playwright test --project=chromium-authenticated",
@@ -33,9 +33,9 @@
     "test:authenticated:ui": "cross-env TEST_ENV=uat playwright test --project=chromium-authenticated --ui",
 
     "── CAMPAIGN TESTS ──────────────────────────────────────────": "",
-    "test:campaign": "cross-env TEST_ENV=uat playwright test tests/campaign.spec.js --project=chromium",
-    "test:campaign:headed": "cross-env TEST_ENV=uat playwright test tests/campaign.spec.js --project=chromium --headed",
-    "test:campaign:ui": "cross-env TEST_ENV=uat playwright test tests/campaign.spec.js --project=chromium --ui",
+    "test:campaign": "cross-env TEST_ENV=uat playwright test tests/campaign/campaign.spec.js --project=chromium",
+    "test:campaign:headed": "cross-env TEST_ENV=uat playwright test tests/campaign/campaign.spec.js --project=chromium --headed",
+    "test:campaign:ui": "cross-env TEST_ENV=uat playwright test tests/campaign/campaign.spec.js --project=chromium --ui",
 
     "── UTILS ───────────────────────────────────────────────────": "",
     "report": "playwright show-report"

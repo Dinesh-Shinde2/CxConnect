@@ -1,5 +1,5 @@
-const { test } = require('../fixtures/baseFixture');
-const { OtpHelper } = require('../utils/otpHelper');
+const { test } = require('../../src/fixtures/baseFixture');
+const { OtpHelper } = require('../../src/utils/otpHelper');
 
 test.describe('CX-Connect Authentication Suite', () => {
   

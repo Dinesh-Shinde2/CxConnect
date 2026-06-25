@@ -2,11 +2,12 @@ const { test: base, expect } = require('@playwright/test');
 const { LoginPage } = require('../pages/LoginPage');
 const { DashboardPage } = require('../pages/DashboardPage');
 const { CampaignPage } = require('../pages/CampaignPage');
+const { ContactListPage } = require('../pages/ContactListPage');
 
 /**
  * Base Playwright Test Fixture extended with POM classes.
  * Usage:
- *   const { test, expect } = require('../fixtures/baseFixture');
+ *   const { test, expect } = require('../../src/fixtures/baseFixture');
  * 
  *   test('some test', async ({ loginPage, dashboardPage }) => {
  *     await loginPage.goto();
@@ -31,6 +32,13 @@ const test = base.extend({
     const campaignPage = new CampaignPage(page);
     await use(campaignPage);
   },
+
+  // Instantiate ContactListPage POM
+  contactListPage: async ({ page }, use) => {
+    const contactListPage = new ContactListPage(page);
+    await use(contactListPage);
+  },
 });
 
 module.exports = { test, expect };
+

@@ -12,7 +12,7 @@
  *   USER_PASSWORD=<your_password>
  */
 
-const { test, expect } = require('../fixtures/baseFixture');
+const { test, expect } = require('../../src/fixtures/baseFixture');
 
 test.describe('Password Login | CX-Connect', () => {
   // Serial mode: prevents parallel login conflicts on the same UAT environment

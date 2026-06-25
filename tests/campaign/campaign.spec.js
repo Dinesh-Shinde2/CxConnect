@@ -13,10 +13,10 @@
  *   USER_PASSWORD=<your_password>
  */
 
-const { test, expect } = require('../fixtures/baseFixture');
-const { LoginPage } = require('../pages/LoginPage');
-const { DashboardPage } = require('../pages/DashboardPage');
-const { CampaignPage } = require('../pages/CampaignPage');
+const { test, expect } = require('../../src/fixtures/baseFixture');
+const { LoginPage } = require('../../src/pages/LoginPage');
+const { DashboardPage } = require('../../src/pages/DashboardPage');
+const { CampaignPage } = require('../../src/pages/CampaignPage');
 
 // ── IMPORTANT: Serial mode ensures tests run one-by-one and share the browser context ──
 // retries = 0 intentionally — serial+retries causes beforeAll to restart, expiring the session

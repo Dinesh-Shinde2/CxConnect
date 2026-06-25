@@ -12,23 +12,30 @@ The repository is structured to maintain a strict separation of concerns, keepin
 
 ```text
 CxConnect/
-├── fixtures/                           # Custom Playwright fixtures
-│   └── baseFixture.js                  # Pre-instantiates and injects Page Object Models
-├── pages/                              # Page Object Models (POM) - UI Selectors & Actions
-│   ├── LoginPage.js                    # Handles password login, OTP mode switching, and validation
-│   ├── DashboardPage.js                # Selectors and validations for the main dashboard
-│   ├── CampaignPage.js                 # Campaigns management, Outbound page, creation modals
-│   └── ContactListPage.js              # Contact lists, file imports, and list management
-├── tests/                              # Test spec files
-│   ├── auth.setup.js                   # 🔑 One-time authentication setup (saves session state)
-│   ├── login.spec.js                   # Unified login test case (branches by environment config)
-│   ├── password-login.spec.js          # Direct password login test suite
-│   ├── otp-login.spec.js               # Direct OTP authentication test suite
-│   ├── dashboard-authenticated.spec.js # Specs running inside an already logged-in session
-│   ├── campaign.spec.js                # Core campaign management tests
-│   └── campaign-creation-flow.spec.js  # End-to-end multi-step campaign builder flow
-├── utils/                              # Utility and helper functions
-│   └── otpHelper.js                    # Dynamically retrieves/simulates OTP codes
+├── src/                                # Framework Core Source
+│   ├── fixtures/                       # Custom Playwright Fixtures
+│   │   └── baseFixture.js              # Page Object pre-instantiation & injection
+│   ├── pages/                          # Page Object Models (POM) representing application screens
+│   │   ├── LoginPage.js
+│   │   ├── DashboardPage.js
+│   │   ├── CampaignPage.js
+│   │   └── ContactListPage.js
+│   ├── utils/                          # Common Helper Utilities
+│   │   └── otpHelper.js
+│   └── constants/                      # Static Application constants, routes & configurations
+│       └── config.js                   # Application-wide static values & select dropdown options
+├── tests/                              # Spec execution files grouped by application modules
+│   ├── setup/                          # Global setup & state initialization
+│   │   └── auth.setup.js
+│   ├── auth/                           # Authentication testing suite
+│   │   ├── login.spec.js
+│   │   ├── password-login.spec.js
+│   │   └── otp-login.spec.js
+│   ├── dashboard/                      # Dashboard testing suite
+│   │   └── dashboard-authenticated.spec.js
+│   └── campaign/                       # Campaign management testing suite
+│       ├── campaign.spec.js
+│       └── campaign-creation-flow.spec.js
 ├── .env.example                        # Template for configuring local environments
 ├── package.json                        # Scripts, dependencies, and project metadata
 ├── playwright.config.js                # Global Playwright configuration and project engines
@@ -93,7 +100,7 @@ To avoid logging in before every single test case—which causes test suites to 
                  └────────────────────────────────────────────────────────┘
 ```
 
-* **`tests/auth.setup.js`** logs in using your configured credentials and saves cookies/localStorage into `playwright/.auth/user.json` (which is excluded from Git).
+* **`tests/setup/auth.setup.js`** logs in using your configured credentials and saves cookies/localStorage into `playwright/.auth/user.json` (which is excluded from Git).
 * Authenticated specs load this state using `test.use({ storageState: 'playwright/.auth/user.json' })`.
 
 ---
@@ -101,6 +108,9 @@ To avoid logging in before every single test case—which causes test suites to 
 ## 🚀 Execution Commands
 
 Pre-configured execution commands are available in [package.json](file:///c:/Users/Ishan/Desktop/CxConnect/package.json):
+
+
+### npx playwright test
 
 ### Password Login Tests
 Run direct password-based login tests in headed/headless/specific browsers:
@@ -176,7 +186,7 @@ npm run report
 
 ## 🛠️ Framework Implementation Standards
 
-### 1. Custom Fixtures (`fixtures/baseFixture.js`)
+### 1. Custom Fixtures (`src/fixtures/baseFixture.js`)
 Instead of manually instantiating page models in every test case:
 ```javascript
 // Before

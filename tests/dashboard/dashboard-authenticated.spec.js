@@ -8,16 +8,39 @@
  *   npm run test:authenticated:ui          → Runs in Playwright UI mode
  */
 
-const { test, expect } = require('../fixtures/baseFixture');
+const { test, expect } = require('../../src/fixtures/baseFixture');
+
+const fs = require('fs');
+const path = require('path');
 
 // Load the shared authentication state (session cookies and local storage)
 test.use({ storageState: 'playwright/.auth/user.json' });
 
+// Load sessionStorage saved during setup
+const sessionStoragePath = path.resolve(__dirname, '../../playwright/.auth/sessionStorage.json');
+let sessionStorageData = '{}';
+try {
+  sessionStorageData = fs.readFileSync(sessionStoragePath, 'utf-8');
+} catch (e) {
+  console.warn('[Warning] sessionStorage.json not found. Make sure setup ran first.');
+}
+
 test.describe('Authenticated Dashboard Suite | CX-Connect', () => {
 
-  // Before each test, navigate directly to the Dashboard page.
-  // Because we load the storageState, the page will load the logged-in view directly.
-  test.beforeEach(async ({ dashboardPage }) => {
+  test.beforeEach(async ({ dashboardPage, page }) => {
+    // 1. Go to login page first to establish target origin context
+    await page.goto('/login');
+    await page.waitForLoadState('networkidle');
+
+    // 2. Set sessionStorage data
+    await page.evaluate((sessionData) => {
+      const data = JSON.parse(sessionData);
+      for (const [key, value] of Object.entries(data)) {
+        sessionStorage.setItem(key, value);
+      }
+    }, sessionStorageData);
+
+    // 3. Navigate to Dashboard
     await dashboardPage.goto();
   });
 

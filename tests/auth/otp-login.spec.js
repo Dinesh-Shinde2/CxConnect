@@ -17,8 +17,8 @@
  *     - SMS provider (Twilio, etc.)
  */
 
-const { test, expect } = require('../fixtures/baseFixture');
-const { OtpHelper } = require('../utils/otpHelper');
+const { test, expect } = require('../../src/fixtures/baseFixture');
+const { OtpHelper } = require('../../src/utils/otpHelper');
 
 test.describe('OTP Login | CX-Connect', () => {
 
