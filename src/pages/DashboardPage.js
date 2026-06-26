@@ -54,9 +54,15 @@ class DashboardPage {
 
   // ── Logout Flow ───────────────────────────────────────────────────────
   async logout() {
-    await this.userAvatar.click();
+    if (this.page.url().includes('access-denied')) {
+      console.log('[DashboardPage.logout] On access-denied page, navigating to dashboard first.');
+      await this.page.goto('/app/dashboard');
+      await this.page.waitForLoadState('networkidle');
+      await this.page.waitForTimeout(1000);
+    }
+    await this.userAvatar.click({ force: true });
     await this.logoutButton.waitFor({ state: 'visible', timeout: 5000 });
-    await this.logoutButton.click();
+    await this.logoutButton.click({ force: true });
     await this.page.waitForURL(/.*login/, { timeout: 20000 });
   }
 

@@ -44,26 +44,66 @@ CxConnect/
 
 ---
 
-## ⚙️ Environment & Authentication Configuration
+## ⚙️ Environment, Personas & Authentication Configuration
 
-The framework supports multiple environments (**UAT**, **QA**, **Production**) and authentication modes (**Password** vs **OTP**) via environment variables.
+The framework supports multiple environments (**UAT**, **QA**, **Production**), authentication modes (**Password** vs **OTP**), and multiple user roles (**Tenant admin**, **Admin**, **Supervisor**, **Agent**) via environment variables.
 
 ### Local Configuration Setup
 1. Copy the `.env.example` file to create your environment-specific files:
    * `.env.uat` (for UAT environment)
    * `.env.qa` (for QA environment)
    * `.env.prod` (for Production environment)
-2. Fill in the values for the respective environment:
+2. Fill in the values for the respective environment inside `.env.uat` (or the active environment config file):
    ```env
    TEST_ENV=uat
    BASE_URL=https://uat.ishancxconnect.com
-   USER_ID=your_username
-   USER_PASSWORD=your_password
+   
+   # Active Persona (tenant_admin | admin | supervisor | agent)
+   USER_ROLE=admin
+   
+   # Credentials
+   TENANT_ADMIN_USER_ID=your_tenant_admin_id
+   TENANT_ADMIN_USER_PASSWORD=your_tenant_admin_password
+   
+   ADMIN_USER_ID=tena003-a16
+   ADMIN_USER_PASSWORD=Mayur9898@
+   
+   SUPERVISOR_USER_ID=tena003-a21
+   SUPERVISOR_USER_PASSWORD=Mayur9898@
+   
+   AGENT_USER_ID=tena003-a20
+   AGENT_USER_PASSWORD=Mayur9898@
+   
    ADMIN_EMAIL=your_email@yopmail.com
    ```
 
+### Switching Active Persona & Permissions
+You can switch the user role running the campaign E2E tests by setting the `USER_ROLE` variable.
+
+* **Tenant Admin (`tenant_admin`)**: Field placeholders created (credentials to be filled).
+* **Admin (`admin`)**: Allowed to create outbound & inbound campaigns.
+* **Supervisor (`supervisor`)**: Allowed to create outbound & inbound campaigns.
+* **Agent (`agent`)**: **Restricted**. Campaign creation tests automatically verify that the Agent cannot see the campaign creation buttons/options, asserting permission boundaries correctly and skipping creation steps.
+
+**Method 1: Change in `.env.uat`**
+Open `.env.uat` and update the active `USER_ROLE`:
+```env
+USER_ROLE=agent
+```
+
+**Method 2: Command Line Override**
+You can temporarily override the role from your terminal:
+* **Windows (PowerShell)**:
+  ```powershell
+  $env:USER_ROLE="agent"; npm run test:campaign:headed
+  ```
+* **macOS/Linux**:
+  ```bash
+  USER_ROLE=agent npm run test:campaign:headed
+  ```
+
 ### Mode Switching
-* **`TEST_ENV`**: Determines which file (`.env.uat`, `.env.qa`, or `.env.prod`) is loaded.
+* **`TEST_ENV`**: Determines which environment file (`.env.uat`, `.env.qa`, or `.env.prod`) is loaded.
 * **`LOGIN_TYPE`**: Selects the login route:
   * `LOGIN_TYPE=password`: Runs User ID + Password login.
   * `LOGIN_TYPE=otp`: Runs Email + OTP login.

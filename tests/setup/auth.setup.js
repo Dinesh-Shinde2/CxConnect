@@ -12,12 +12,12 @@ test('authenticate and save storage state', async ({ loginPage, dashboardPage, p
   // Navigate to the login page
   await loginPage.goto();
 
-  // Retrieve credentials from environment variables
-  const userId = process.env.USER_ID;
-  const password = process.env.USER_PASSWORD;
+  // Retrieve credentials from environment variables dynamically using the helper
+  const { resolveCredentials } = require('../../src/utils/credentialsHelper');
+  const { role, userId, password } = resolveCredentials();
 
   if (!userId || !password) {
-    throw new Error('USER_ID and USER_PASSWORD environment variables are required in the environment file.');
+    throw new Error(`Credentials for role "${role}" (USER_ROLE) are required but not configured in the environment file.`);
   }
 
   console.log(`[Setup] Performing login for user: ${userId}`);

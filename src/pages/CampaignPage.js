@@ -93,6 +93,11 @@ class CampaignPage {
       throw new Error('[CampaignPage.goto] Session expired — redirected to login. Re-run the test suite.');
     }
 
+    if (landedUrl.includes('access-denied')) {
+      console.log('[CampaignPage.goto] Redirected to access-denied. Returning early.');
+      return;
+    }
+
     // If redirected back to dashboard (SPA guard), fallback to sidebar href
     if (!landedUrl.includes('campaign-manager')) {
       const campaignLink = this.page.locator('a[href="/app/campaign-manager"]');

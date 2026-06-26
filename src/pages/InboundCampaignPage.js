@@ -130,6 +130,11 @@ class InboundCampaignPage {
       throw new Error('[InboundCampaignPage.goto] Session expired — redirected to login.');
     }
 
+    if (landedUrl.includes('access-denied')) {
+      console.log('[InboundCampaignPage.goto] Redirected to access-denied. Returning early.');
+      return;
+    }
+
     if (!landedUrl.includes('campaign-manager')) {
       const campaignLink = this.page.locator('a[href="/app/campaign-manager"]');
       if (await campaignLink.count() > 0) {

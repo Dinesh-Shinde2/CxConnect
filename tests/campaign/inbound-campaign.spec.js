@@ -28,6 +28,8 @@ const { test, expect } = require('../../src/fixtures/baseFixture');
 const { LoginPage } = require('../../src/pages/LoginPage');
 const { DashboardPage } = require('../../src/pages/DashboardPage');
 const { InboundCampaignPage } = require('../../src/pages/InboundCampaignPage');
+const { resolveCredentials } = require('../../src/utils/credentialsHelper');
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ══════════════════════════════════════════════════════════════════════════════
@@ -110,20 +112,22 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
 
   let sharedPage;
   let ibPage;
+  let activeRole = 'admin';
 
   // ── Login ONCE before all tests ──────────────────────────────────────
   test.beforeAll(async ({ browser }) => {
     const context = await browser.newContext();
     sharedPage = await context.newPage();
 
-    const userId   = process.env.USER_ID;
-    const password = process.env.USER_PASSWORD;
+    const credentials = resolveCredentials();
+    activeRole = credentials.role;
+    const { userId, password } = credentials;
 
     if (!userId || !password) {
-      throw new Error('[Inbound Campaign Suite] USER_ID and USER_PASSWORD must be set in .env.uat');
+      throw new Error(`[Inbound Campaign Suite] Credentials for role "${activeRole}" must be set in .env.uat`);
     }
 
-    console.log(`[Inbound Campaign Suite] Logging in once as: ${userId}`);
+    console.log(`[Inbound Campaign Suite] Logging in once as: ${userId} (${activeRole})`);
 
     const loginPage = new LoginPage(sharedPage);
     await loginPage.goto();
@@ -131,23 +135,34 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
 
     const dashboardPage = new DashboardPage(sharedPage);
     await dashboardPage.expectDashboardLoaded();
-    console.log('[Inbound Campaign Suite] ✅ Login successful. Session reused for all tests.');
+    console.log(`[Inbound Campaign Suite] ✅ Login successful for role "${activeRole}". Session reused for all tests.`);
 
     ibPage = new InboundCampaignPage(sharedPage);
   });
 
   // ── Close shared session after all tests ─────────────────────────────
   test.afterAll(async () => {
-    if (sharedPage) await sharedPage.context().close();
+    if (sharedPage) {
+      try {
+        const dashboardPage = new DashboardPage(sharedPage);
+        await dashboardPage.logout();
+        console.log('[Inbound Campaign Suite] ✅ Logged out successfully');
+      } catch (e) {
+        console.log('[Inbound Campaign Suite] ⚠️ Failed to log out during afterAll cleanup:', e.message);
+      }
+      await sharedPage.context().close();
+    }
   });
 
   // ── Session recovery before each test ────────────────────────────────
   test.beforeEach(async () => {
     if (sharedPage && sharedPage.url().includes('/login')) {
       console.log('[beforeEach] ⚠️ Detected redirect to login page. Re-authenticating...');
+      const credentials = resolveCredentials();
+      const { userId, password } = credentials;
       const loginPage = new LoginPage(sharedPage);
       await loginPage.goto();
-      await loginPage.loginWithUserIdAndPassword(process.env.USER_ID, process.env.USER_PASSWORD);
+      await loginPage.loginWithUserIdAndPassword(userId, password);
       await ibPage.goto();
     }
   });
@@ -277,6 +292,10 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
   // TC_IBC_000 | Prepare environment — free up DID if none are available
   // ─────────────────────────────────────────────────────────────────────
   test('TC_IBC_000 | Prepare environment — free up DID if none are available', async () => {
+    if (activeRole === 'agent') {
+      console.log('[TC_IBC_000] Skipped environment preparation for Agent role.');
+      return;
+    }
     console.log('[TC_IBC_000] Navigating to Campaign Manager...');
     await ibPage.goto();
     await ibPage.expectCampaignPageLoaded();
@@ -340,6 +359,14 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
   test('TC_IBC_001 | Campaign Manager page loads after login @smoke', async () => {
     console.log('[TC_IBC_001] Navigating to Campaign Manager (Inbound)...');
     await ibPage.goto();
+
+    if (activeRole === 'agent') {
+      console.log('[TC_IBC_001] Checking permission: Agent should be redirected to access-denied');
+      await expect(sharedPage).toHaveURL(/.*\/app\/access-denied/, { timeout: 15000 });
+      console.log('[TC_IBC_001] ✅ Verified: Agent redirected to access-denied successfully.');
+      return;
+    }
+
     await ibPage.expectCampaignPageLoaded();
     console.log('[TC_IBC_001] ✅ Campaign Manager page loaded');
   });
@@ -348,6 +375,10 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
   // TC_IBC_002 | Inbound sub-tab is visible and active
   // ─────────────────────────────────────────────────────────────────────
   test('TC_IBC_002 | Inbound tab is visible on Campaign Manager page @smoke', async () => {
+    if (activeRole === 'agent') {
+      console.log('[TC_IBC_002] Skipped for Agent (page is restricted).');
+      return;
+    }
     await ibPage.expectInboundTabVisible();
     console.log('[TC_IBC_002] ✅ Inbound tab is visible');
   });
@@ -356,6 +387,12 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
   // TC_IBC_003 | Open "Add new Inbound Campaign" modal
   // ─────────────────────────────────────────────────────────────────────
   test('TC_IBC_003 | "Add new Inbound Campaign" modal opens correctly @smoke', async () => {
+    if (activeRole === 'agent') {
+      console.log('[TC_IBC_003] Checking permission: Agent should NOT see "+ New Campaign" button');
+      await expect(ibPage.addCampaignButton).toBeHidden();
+      console.log('[TC_IBC_003] ✅ Verified: "+ New Campaign" button is hidden for Agent.');
+      return;
+    }
     const isOpen = await ibPage.modalTitle.isVisible().catch(() => false);
     if (!isOpen) await ibPage.openAddCampaignModal();
     await ibPage.expectModalVisible();
@@ -366,6 +403,10 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
   // TC_IBC_004 | All always-visible form fields are present (default state)
   // ─────────────────────────────────────────────────────────────────────
   test('TC_IBC_004 | All required form fields visible in modal (default state)', async () => {
+    if (activeRole === 'agent') {
+      console.log('[TC_IBC_004] Skipped for Agent (creation modal is restricted).');
+      return;
+    }
     await ibPage.expectAllFormFieldsVisible();
     console.log('[TC_IBC_004] ✅ All form fields visible (IVR is default Route To)');
   });
@@ -382,6 +423,10 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
   //   Current value: resolvedCampaignName (printed in log)
   // ─────────────────────────────────────────────────────────────────────
   test('TC_IBC_005 | Campaign name is filled with configured value', async () => {
+    if (activeRole === 'agent') {
+      console.log('[TC_IBC_005] Skipped for Agent (creation modal is restricted).');
+      return;
+    }
     console.log(`[TC_IBC_005] Filling campaign name: "${resolvedCampaignName}"`);
     await ibPage.campaignNameInput.scrollIntoViewIfNeeded();
     await ibPage.campaignNameInput.clear();
@@ -396,6 +441,10 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
   //   UAT options: +912269054593, +912269054596, +912269054597
   // ─────────────────────────────────────────────────────────────────────
   test('TC_IBC_006 | "Select DID" dropdown — select configured DID @smoke', async () => {
+    if (activeRole === 'agent') {
+      console.log('[TC_IBC_006] Skipped for Agent (creation modal is restricted).');
+      return;
+    }
     console.log(`[TC_IBC_006] DID config: ${CAMPAIGN_CONFIG.did ?? 'null (open only)'}`);
     await handleDropdown(/^Select a DID/, CAMPAIGN_CONFIG.did, 'Select DID', 'TC_IBC_006');
   });
@@ -405,6 +454,10 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
   //   CAMPAIGN_CONFIG.businessHour: '24x7' | '9 AM - 6 PM' | null
   // ─────────────────────────────────────────────────────────────────────
   test('TC_IBC_007 | "Business Hours" dropdown — select configured option', async () => {
+    if (activeRole === 'agent') {
+      console.log('[TC_IBC_007] Skipped for Agent (creation modal is restricted).');
+      return;
+    }
     console.log(`[TC_IBC_007] Business Hour config: ${CAMPAIGN_CONFIG.businessHour ?? 'null (open only)'}`);
     await handleDropdown(/^Select your Business hour/, CAMPAIGN_CONFIG.businessHour, 'Business Hours', 'TC_IBC_007');
   });
@@ -414,6 +467,10 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
   //   CAMPAIGN_CONFIG.outOfBusinessAudio: 'ishanofficehours' | null
   // ─────────────────────────────────────────────────────────────────────
   test('TC_IBC_008 | "Out of Business - Audio File" dropdown — select configured file', async () => {
+    if (activeRole === 'agent') {
+      console.log('[TC_IBC_008] Skipped for Agent (creation modal is restricted).');
+      return;
+    }
     console.log(`[TC_IBC_008] Audio File config: ${CAMPAIGN_CONFIG.outOfBusinessAudio ?? 'null (open only)'}`);
     await handleDropdown(/^Select your Audio File/, CAMPAIGN_CONFIG.outOfBusinessAudio, 'Out of Business Audio', 'TC_IBC_008');
   });
@@ -423,6 +480,10 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
   //   CAMPAIGN_CONFIG.routeTo: 'Queue' | 'IVR'
   // ─────────────────────────────────────────────────────────────────────
   test('TC_IBC_009 | Route To — select configured option (Queue or IVR)', async () => {
+    if (activeRole === 'agent') {
+      console.log('[TC_IBC_009] Skipped for Agent (creation modal is restricted).');
+      return;
+    }
     console.log(`[TC_IBC_009] Route To config: "${CAMPAIGN_CONFIG.routeTo}"`);
     if (CAMPAIGN_CONFIG.routeTo === 'Queue') {
       await ibPage.selectRouteToQueue();
@@ -443,6 +504,10 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
   //   If routeTo='IVR':   CAMPAIGN_CONFIG.ivrName       (null = first available)
   // ─────────────────────────────────────────────────────────────────────
   test('TC_IBC_010 | Select Queue/IVR — select configured option', async () => {
+    if (activeRole === 'agent') {
+      console.log('[TC_IBC_010] Skipped for Agent (creation modal is restricted).');
+      return;
+    }
     if (CAMPAIGN_CONFIG.routeTo === 'Queue') {
       console.log(`[TC_IBC_010] Queue config: ${CAMPAIGN_CONFIG.campaignQueue ?? 'null (first available)'}`);
       await handleDropdown(/^Select a Queue/, CAMPAIGN_CONFIG.campaignQueue, 'Select Queue', 'TC_IBC_010');
@@ -457,6 +522,10 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
   //   CAMPAIGN_CONFIG.script: 'Inbound Script 1' | null
   // ─────────────────────────────────────────────────────────────────────
   test('TC_IBC_011 | "Select Script" dropdown — select configured script', async () => {
+    if (activeRole === 'agent') {
+      console.log('[TC_IBC_011] Skipped for Agent (creation modal is restricted).');
+      return;
+    }
     console.log(`[TC_IBC_011] Script config: ${CAMPAIGN_CONFIG.script ?? 'null (open only)'}`);
     await handleDropdown(/^Select a Script/, CAMPAIGN_CONFIG.script, 'Select Script', 'TC_IBC_011');
   });
@@ -466,6 +535,10 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
   //   CAMPAIGN_CONFIG.pisEnabled: true | false
   // ─────────────────────────────────────────────────────────────────────
   test('TC_IBC_012 | PIS toggle is visible and set per config', async () => {
+    if (activeRole === 'agent') {
+      console.log('[TC_IBC_012] Skipped for Agent (creation modal is restricted).');
+      return;
+    }
     const pisToggle = sharedPage.locator('div').filter({ hasText: /\bPIS\b/ }).locator('button').first();
     await expect(pisToggle).toBeVisible({ timeout: 5000 });
 
@@ -485,6 +558,10 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
   // TC_IBC_013 | Save and Cancel buttons visible
   // ─────────────────────────────────────────────────────────────────────
   test('TC_IBC_013 | "Save" and "Cancel" buttons are visible in the modal', async () => {
+    if (activeRole === 'agent') {
+      console.log('[TC_IBC_013] Skipped for Agent (creation modal is restricted).');
+      return;
+    }
     await expect(ibPage.saveButton).toBeVisible({ timeout: 5000 });
     await expect(ibPage.cancelButton).toBeVisible({ timeout: 5000 });
     console.log('[TC_IBC_013] ✅ Save and Cancel buttons are visible');
@@ -494,6 +571,10 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
   // TC_IBC_014 | Cancel closes the modal without saving
   // ─────────────────────────────────────────────────────────────────────
   test('TC_IBC_014 | Clicking Cancel closes the modal without creating a campaign', async () => {
+    if (activeRole === 'agent') {
+      console.log('[TC_IBC_014] Skipped for Agent (creation modal is restricted).');
+      return;
+    }
     await ibPage.cancelCampaignCreation();
     await ibPage.expectModalClosed();
     console.log('[TC_IBC_014] ✅ Cancel closes the Inbound Campaign modal');
@@ -503,6 +584,10 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
   // TC_IBC_015 | Modal re-opens in clean default state after Cancel
   // ─────────────────────────────────────────────────────────────────────
   test('TC_IBC_015 | Modal re-opens in default state (IVR selected) after Cancel', async () => {
+    if (activeRole === 'agent') {
+      console.log('[TC_IBC_015] Skipped for Agent (creation modal is restricted).');
+      return;
+    }
     await ibPage.openAddCampaignModal();
     await ibPage.expectModalVisible();
 
@@ -519,6 +604,11 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
   // TC_IBC_016 | Complete Inbound Campaign Creation and Save
   // ─────────────────────────────────────────────────────────────────────
   test('TC_IBC_016 | Complete Inbound Campaign Creation and Save', async () => {
+    test.setTimeout(120000);
+    if (activeRole === 'agent') {
+      console.log('[TC_IBC_016] Skipped for Agent (creation modal is restricted).');
+      return;
+    }
     console.log('[TC_IBC_016] Starting campaign creation E2E...');
     await ibPage.openAddCampaignModal();
     await ibPage.expectModalVisible();
@@ -579,8 +669,10 @@ test.describe('Inbound Campaign Manager Suite | CX-Connect', () => {
     await sharedPage.waitForTimeout(2000);
     if (sharedPage.url().includes('/login')) {
       console.log('[TC_IBC_016] ⚠️ Session expired and redirected to login page. Re-logging in...');
+      const credentials = resolveCredentials();
+      const { userId, password } = credentials;
       const loginPage = new LoginPage(sharedPage);
-      await loginPage.loginWithUserIdAndPassword(process.env.USER_ID, process.env.USER_PASSWORD);
+      await loginPage.loginWithUserIdAndPassword(userId, password);
       await ibPage.goto();
     }
 

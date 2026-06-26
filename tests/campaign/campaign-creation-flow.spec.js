@@ -117,25 +117,50 @@ async function pickFirstOption(page, labelText) {
 test.describe('Campaign E2E Creation Flow', () => {
   test.describe.configure({ mode: 'serial', retries: 0 });
 
+  test.afterEach(async ({ page }) => {
+    try {
+      const { DashboardPage } = require('../../src/pages/DashboardPage');
+      const dashboardPage = new DashboardPage(page);
+      await dashboardPage.logout();
+      console.log('[Creation Flow] ✅ Logged out successfully');
+    } catch (e) {
+      console.log('[Creation Flow] ⚠️ Failed to log out during afterEach cleanup:', e.message);
+    }
+  });
+
   test('E2E_CAMP_001 | Complete Outbound Campaign Creation Flow', async ({ loginPage, campaignPage, page }) => {
     test.setTimeout(120000);
 
     // ── STEP 1-2: Login ──────────────────────────────────────────────────────
     console.log('[Step 1-2] Logging in...');
     await loginPage.goto();
-    const userId = process.env.USER_ID;
-    const password = process.env.USER_PASSWORD;
-    if (!userId || !password) throw new Error('USER_ID / USER_PASSWORD not set in .env.uat');
+    const { resolveCredentials } = require('../../src/utils/credentialsHelper');
+    const credentials = resolveCredentials();
+    const { role, userId, password } = credentials;
+    if (!userId || !password) throw new Error(`Credentials for role "${role}" not set in .env.uat`);
     await loginPage.loginWithUserIdAndPassword(userId, password);
     await page.waitForURL(/\/app\/dashboard/, { timeout: 30000 });
     await page.waitForTimeout(2000);
-    console.log('✅ Login successful');
+    console.log(`✅ Login successful as role: ${role}`);
 
     // ── STEP 3-5: Navigate to Contact List (direct URL) ──────────────────────
     console.log('[Step 3-5] Navigating to Contact List...');
     await page.goto('/app/master/contact-list');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
+
+    if (role === 'agent') {
+      console.log('[Step 3-5] Checking permission: Agent should be redirected to access-denied for contact list');
+      await expect(page).toHaveURL(/.*\/app\/access-denied/, { timeout: 15000 });
+      console.log('✅ Verified: Agent redirected to access-denied for contact list.');
+      
+      console.log('[Step 9] Navigating to Campaign Manager...');
+      await page.goto('/app/campaign-manager');
+      await page.waitForLoadState('networkidle');
+      await expect(page).toHaveURL(/.*\/app\/access-denied/, { timeout: 15000 });
+      console.log('✅ Verified: Agent redirected to access-denied for campaign manager. E2E check passed.');
+      return;
+    }
 
     // ── STEP 6: Click "New List" button ──────────────────────────────────────
     console.log('[Step 6] Clicking "New List" button...');
@@ -230,6 +255,12 @@ test.describe('Campaign E2E Creation Flow', () => {
 
     // ── STEP 11: Open Add Campaign modal ─────────────────────────────────────
     console.log('[Step 11] Opening Add Campaign modal...');
+    if (role === 'agent') {
+      console.log('[Step 11] Checking permission: Agent should NOT see "+ New Campaign" button');
+      await expect(campaignPage.addCampaignButton).toBeHidden();
+      console.log('✅ Verified: "+ New Campaign" button is hidden for Agent. E2E check passed.');
+      return;
+    }
     await campaignPage.openAddCampaignModal();
     console.log('✅ Modal open');
 
