@@ -4,6 +4,7 @@ const { DashboardPage } = require('../pages/DashboardPage');
 const { CampaignPage } = require('../pages/CampaignPage');
 const { ContactListPage } = require('../pages/ContactListPage');
 const { InboundCampaignPage } = require('../pages/InboundCampaignPage');
+const { ContactPage } = require('../pages/ContactPage');
 
 /**
  * Base Playwright Test Fixture extended with POM classes.
@@ -44,6 +45,12 @@ const test = base.extend({
   inboundCampaignPage: async ({ page }, use) => {
     const inboundCampaignPage = new InboundCampaignPage(page);
     await use(inboundCampaignPage);
+  },
+
+  // Instantiate ContactPage POM
+  contactPage: async ({ page }, use) => {
+    const contactPage = new ContactPage(page);
+    await use(contactPage);
   },
 });
 
