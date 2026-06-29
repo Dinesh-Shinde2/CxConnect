@@ -5,6 +5,7 @@ const { CampaignPage } = require('../pages/CampaignPage');
 const { ContactListPage } = require('../pages/ContactListPage');
 const { InboundCampaignPage } = require('../pages/InboundCampaignPage');
 const { ContactPage } = require('../pages/ContactPage');
+const { IVRDesignerPage } = require('../pages/IVRDesignerPage');
 
 /**
  * Base Playwright Test Fixture extended with POM classes.
@@ -52,7 +53,14 @@ const test = base.extend({
     const contactPage = new ContactPage(page);
     await use(contactPage);
   },
+
+  // Instantiate IVRDesignerPage POM
+  ivrDesignerPage: async ({ page }, use) => {
+    const ivrDesignerPage = new IVRDesignerPage(page);
+    await use(ivrDesignerPage);
+  },
 });
 
 module.exports = { test, expect };
+
 
