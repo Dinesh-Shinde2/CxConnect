@@ -1,16 +1,16 @@
-const { test, expect } = require('../src/fixtures/baseFixture');
+const { test, expect } = require('../../../src/fixtures/baseFixture');
 const fs = require('fs');
 const path = require('path');
 
 test.use({ storageState: 'playwright/.auth/user.json' });
 
-const sessionStoragePath = path.resolve(__dirname, '../playwright/.auth/sessionStorage.json');
+const sessionStoragePath = path.resolve(__dirname, '../../../playwright/.auth/sessionStorage.json');
 let sessionStorageData = '{}';
 try {
   sessionStorageData = fs.readFileSync(sessionStoragePath, 'utf-8');
 } catch (e) {}
 
-test('Diagnostic | Print property panel aside HTML', async ({ page }) => {
+test('Diagnostic | Print trigger parent HTML when dropdown is open', async ({ page }) => {
   test.setTimeout(60000);
 
   await page.goto('/login');
@@ -33,10 +33,15 @@ test('Diagnostic | Print property panel aside HTML', async ({ page }) => {
   await menuNode.click();
   await page.waitForTimeout(2000);
 
-  // Print HTML of the aside or property panel container
-  const aside = page.locator('aside, div[class*="panel"], div[class*="properties"]').first();
-  const asideHTML = await aside.innerHTML().catch(() => 'NOT FOUND');
-  console.log('--- ASIDE CONTAINER HTML ---');
-  console.log(asideHTML);
-  console.log('---------------------------');
+  // Locate the Menu Options button and click it
+  console.log('Clicking Menu Options trigger...');
+  const trigger = page.locator('#menuOptions').first();
+  await trigger.click();
+  await page.waitForTimeout(2000);
+
+  // Print parent HTML of the trigger
+  const parentHTML = await trigger.locator('xpath=../..').innerHTML();
+  console.log('--- TRIGGER PARENT CONTAINER HTML ---');
+  console.log(parentHTML);
+  console.log('------------------------------------');
 });

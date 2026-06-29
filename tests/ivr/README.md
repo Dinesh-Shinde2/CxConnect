@@ -13,6 +13,13 @@ Authentication state must exist at `playwright/.auth/user.json` and
 npx playwright test tests/ivr/ivr-flow-builder-authenticated.spec.js --project=chromium-authenticated --headed
 ```
 
+Diagnostic specs are kept separately in `tests/ivr/diagnostics` and are excluded
+from normal browser and authenticated suites. Run them explicitly when debugging:
+
+```powershell
+npm run test:ivr:diagnostics:headed
+```
+
 ## Configuration structure
 
 ```js

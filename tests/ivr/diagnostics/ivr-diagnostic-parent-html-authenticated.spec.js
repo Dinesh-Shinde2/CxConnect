@@ -1,18 +1,16 @@
-const { test, expect } = require('../src/fixtures/baseFixture');
+const { test, expect } = require('../../../src/fixtures/baseFixture');
 const fs = require('fs');
 const path = require('path');
 
 test.use({ storageState: 'playwright/.auth/user.json' });
 
-const sessionStoragePath = path.resolve(__dirname, '../playwright/.auth/sessionStorage.json');
+const sessionStoragePath = path.resolve(__dirname, '../../../playwright/.auth/sessionStorage.json');
 let sessionStorageData = '{}';
 try {
   sessionStorageData = fs.readFileSync(sessionStoragePath, 'utf-8');
-} catch (e) {
-  console.warn('[Warning] sessionStorage.json not found.');
-}
+} catch (e) {}
 
-test('Diagnostic | Inspect Menu Properties Form HTML', async ({ page }) => {
+test('Diagnostic | Print property panel aside HTML', async ({ page }) => {
   test.setTimeout(60000);
 
   await page.goto('/login');
@@ -35,10 +33,10 @@ test('Diagnostic | Inspect Menu Properties Form HTML', async ({ page }) => {
   await menuNode.click();
   await page.waitForTimeout(2000);
 
-  // Get the property panel container
-  const panel = page.locator('form#node-config-form, div:has(> form#node-config-form)').first();
-  const innerHtml = await panel.innerHTML();
-  console.log('--- MENU PROPERTY FORM INNER HTML ---');
-  console.log(innerHtml);
-  console.log('-------------------------------------');
+  // Print HTML of the aside or property panel container
+  const aside = page.locator('aside, div[class*="panel"], div[class*="properties"]').first();
+  const asideHTML = await aside.innerHTML().catch(() => 'NOT FOUND');
+  console.log('--- ASIDE CONTAINER HTML ---');
+  console.log(asideHTML);
+  console.log('---------------------------');
 });

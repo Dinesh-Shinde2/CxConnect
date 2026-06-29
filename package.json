@@ -31,6 +31,10 @@
     "test:authenticated": "cross-env TEST_ENV=uat playwright test --project=chromium-authenticated",
     "test:authenticated:headed": "cross-env TEST_ENV=uat playwright test --project=chromium-authenticated --headed",
     "test:authenticated:ui": "cross-env TEST_ENV=uat playwright test --project=chromium-authenticated --ui",
+    "test:ivr": "cross-env TEST_ENV=uat playwright test tests/ivr/ivr-flow-builder-authenticated.spec.js --project=chromium-authenticated --workers=1",
+    "test:ivr:headed": "cross-env TEST_ENV=uat playwright test tests/ivr/ivr-flow-builder-authenticated.spec.js --project=chromium-authenticated --workers=1 --headed",
+    "test:ivr:diagnostics": "cross-env TEST_ENV=uat RUN_IVR_DIAGNOSTICS=true playwright test --project=ivr-diagnostics",
+    "test:ivr:diagnostics:headed": "cross-env TEST_ENV=uat RUN_IVR_DIAGNOSTICS=true playwright test --project=ivr-diagnostics --headed",
 
     "── CAMPAIGN TESTS ──────────────────────────────────────────": "",
     "test:campaign": "cross-env TEST_ENV=uat playwright test tests/campaign/campaign.spec.js --project=chromium --workers=1",

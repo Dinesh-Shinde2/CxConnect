@@ -1,10 +1,10 @@
-const { test, expect } = require('../src/fixtures/baseFixture');
+const { test, expect } = require('../../../src/fixtures/baseFixture');
 const fs = require('fs');
 const path = require('path');
 
 test.use({ storageState: 'playwright/.auth/user.json' });
 
-const sessionStoragePath = path.resolve(__dirname, '../playwright/.auth/sessionStorage.json');
+const sessionStoragePath = path.resolve(__dirname, '../../../playwright/.auth/sessionStorage.json');
 let sessionStorageData = '{}';
 try {
   sessionStorageData = fs.readFileSync(sessionStoragePath, 'utf-8');
@@ -12,7 +12,7 @@ try {
   console.warn('[Warning] sessionStorage.json not found.');
 }
 
-test('Diagnostic | Inspect Start Node Handles HTML', async ({ page }) => {
+test('Diagnostic | Inspect Menu Handles HTML', async ({ page }) => {
   test.setTimeout(60000);
 
   await page.goto('/login');
@@ -29,10 +29,10 @@ test('Diagnostic | Inspect Start Node Handles HTML', async ({ page }) => {
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(5000);
 
-  // Get the start node html
-  const startNode = page.locator('.react-flow__node-start').first();
-  const innerHtml = await startNode.innerHTML();
-  console.log('--- START NODE INNER HTML ---');
+  // Click Menu 1 node to open panel
+  const menuNode = page.locator('.react-flow__node-menu').first();
+  const innerHtml = await menuNode.innerHTML();
+  console.log('--- MENU NODE INNER HTML ---');
   console.log(innerHtml);
-  console.log('-----------------------------');
+  console.log('----------------------------');
 });

@@ -1,6 +1,6 @@
-# ?? CX-Connect — Complete Test Execution Commands
+# ?? CX-Connect â€” Complete Test Execution Commands
 
-All commands run on **Desktop Chrome (Chromium)** with `--workers=1` (mandatory — only 1 active login session allowed per user at a time).
+All commands run on **Desktop Chrome (Chromium)** with `--workers=1` (mandatory â€” only 1 active login session allowed per user at a time).
 
 > [!IMPORTANT]
 > **One Session Rule**: The UAT server allows **only one active session per user** at a time.
@@ -14,24 +14,24 @@ All commands run on **Desktop Chrome (Chromium)** with `--workers=1` (mandatory 
 ```
 tests/
 +-- auth/
-¦   +-- login.spec.js                   ? Authentication suite (combined)
-¦   +-- password-login.spec.js          ? Password login validations (TC_PWD_001–007)
-¦   +-- otp-login.spec.js               ? OTP login validations (TC_OTP_001–005)
+Â¦   +-- login.spec.js                   ? Authentication suite (combined)
+Â¦   +-- password-login.spec.js          ? Password login validations (TC_PWD_001â€“007)
+Â¦   +-- otp-login.spec.js               ? OTP login validations (TC_OTP_001â€“005)
 +-- campaign/
-¦   +-- campaign.spec.js                ? Outbound Campaign page tests (TC_CAMP_001–008)
-¦   +-- inbound-campaign.spec.js        ? Inbound Campaign tests (TC_IBC_000–016)
-¦   +-- campaign-creation-flow.spec.js  ? Outbound E2E creation flow (E2E_CAMP_001)
+Â¦   +-- campaign.spec.js                ? Outbound Campaign page tests (TC_CAMP_001â€“008)
+Â¦   +-- inbound-campaign.spec.js        ? Inbound Campaign tests (TC_IBC_000â€“016)
+Â¦   +-- campaign-creation-flow.spec.js  ? Outbound E2E creation flow (E2E_CAMP_001)
 +-- contacts/
-¦   +-- contact-creation.spec.js        ? Contact creation & access check (TC_CON_001)
+Â¦   +-- contact-creation.spec.js        ? Contact creation & access check (TC_CON_001)
 +-- dashboard/
-¦   +-- dashboard-authenticated.spec.js ? Authenticated dashboard tests (TC_AUTH_DASH_001–003)
+Â¦   +-- dashboard-authenticated.spec.js ? Authenticated dashboard tests (TC_AUTH_DASH_001â€“003)
 +-- setup/
     +-- auth.setup.js                   ? Shared auth setup (storageState)
 ```
 
 ---
 
-## ?? 1. Run by Persona — ALL Tests
+## ?? 1. Run by Persona â€” ALL Tests
 
 Runs **every test file** in the project for the selected persona.
 
@@ -118,7 +118,7 @@ $env:TEST_ENV="uat"; $env:USER_ROLE="admin"; npx playwright test tests/campaign/
 $env:TEST_ENV="uat"; $env:USER_ROLE="supervisor"; npx playwright test tests/campaign/ --project=chromium --workers=1 --headed
 ```
 ```powershell
-# Agent (verifies access restrictions only — no creation)
+# Agent (verifies access restrictions only â€” no creation)
 $env:TEST_ENV="uat"; $env:USER_ROLE="agent"; npx playwright test tests/campaign/ --project=chromium --workers=1 --headed
 ```
 
@@ -148,18 +148,18 @@ $env:TEST_ENV="uat"; $env:USER_ROLE="supervisor"; npx playwright test tests/camp
 
 | Test ID | Description |
 |---|---|
-| TC_IBC_000 | Prepare environment — free up DID if none available |
+| TC_IBC_000 | Prepare environment â€” free up DID if none available |
 | TC_IBC_001 | Campaign Manager page loads after login @smoke |
 | TC_IBC_002 | Inbound tab is visible on Campaign Manager page @smoke |
 | TC_IBC_003 | "Add new Inbound Campaign" modal opens correctly @smoke |
 | TC_IBC_004 | All required form fields visible in modal (default state) |
 | TC_IBC_005 | Campaign name is filled with configured value |
-| TC_IBC_006 | "Select DID" dropdown — select configured DID @smoke |
-| TC_IBC_007 | "Business Hours" dropdown — select configured option |
-| TC_IBC_008 | "Out of Business - Audio File" dropdown — select configured file |
-| TC_IBC_009 | Route To — select configured option (Queue or IVR) |
-| TC_IBC_010 | Select Queue/IVR — select configured option |
-| TC_IBC_011 | "Select Script" dropdown — select configured script |
+| TC_IBC_006 | "Select DID" dropdown â€” select configured DID @smoke |
+| TC_IBC_007 | "Business Hours" dropdown â€” select configured option |
+| TC_IBC_008 | "Out of Business - Audio File" dropdown â€” select configured file |
+| TC_IBC_009 | Route To â€” select configured option (Queue or IVR) |
+| TC_IBC_010 | Select Queue/IVR â€” select configured option |
+| TC_IBC_011 | "Select Script" dropdown â€” select configured script |
 | TC_IBC_012 | PIS toggle is visible and set per config |
 | TC_IBC_013 | "Save" and "Cancel" buttons are visible in modal |
 | TC_IBC_014 | Clicking Cancel closes modal without creating a campaign |
@@ -175,7 +175,7 @@ $env:TEST_ENV="uat"; $env:USER_ROLE="admin"; npx playwright test tests/campaign/
 $env:TEST_ENV="uat"; $env:USER_ROLE="supervisor"; npx playwright test tests/campaign/inbound-campaign.spec.js --project=chromium --workers=1 --headed
 ```
 ```powershell
-# Smoke tests only (TC_IBC_001, 002, 003, 006 — fast subset)
+# Smoke tests only (TC_IBC_001, 002, 003, 006 â€” fast subset)
 $env:TEST_ENV="uat"; $env:USER_ROLE="admin"; npx playwright test tests/campaign/inbound-campaign.spec.js --project=chromium --workers=1 --headed --grep "@smoke"
 ```
 
@@ -183,7 +183,7 @@ $env:TEST_ENV="uat"; $env:USER_ROLE="admin"; npx playwright test tests/campaign/
 
 | Test ID | Description |
 |---|---|
-| E2E_CAMP_001 | Complete Outbound Campaign Creation Flow — list creation, add leads, link list, create campaign |
+| E2E_CAMP_001 | Complete Outbound Campaign Creation Flow â€” list creation, add leads, link list, create campaign |
 
 ```powershell
 # Admin
@@ -198,12 +198,12 @@ $env:TEST_ENV="uat"; $env:USER_ROLE="supervisor"; npx playwright test tests/camp
 
 ## ?? 5. Contacts / CRM Tests (contact-creation.spec.js)
 
-> **Note — Agent restriction**: Agent persona has no access to Contacts.
+> **Note â€” Agent restriction**: Agent persona has no access to Contacts.
 > The test automatically verifies the /app/access-denied redirect and passes without attempting creation.
 
 | Test ID | Description |
 |---|---|
-| TC_CON_001 | Single Contact Creation and Access Check — fills all form fields, saves, verifies contact in table |
+| TC_CON_001 | Single Contact Creation and Access Check â€” fills all form fields, saves, verifies contact in table |
 
 ```powershell
 # Admin
@@ -214,7 +214,7 @@ $env:TEST_ENV="uat"; $env:USER_ROLE="admin"; npx playwright test tests/contacts/
 $env:TEST_ENV="uat"; $env:USER_ROLE="supervisor"; npx playwright test tests/contacts/contact-creation.spec.js --project=chromium --workers=1 --headed
 ```
 ```powershell
-# Agent (verifies access-denied redirect — no form)
+# Agent (verifies access-denied redirect â€” no form)
 $env:TEST_ENV="uat"; $env:USER_ROLE="agent"; npx playwright test tests/contacts/contact-creation.spec.js --project=chromium --workers=1 --headed
 ```
 
@@ -276,7 +276,53 @@ $env:TEST_ENV="uat"; $env:USER_ROLE="admin"; npx playwright test --project=chrom
 | Admin | `tena003-a16` | `Mayur9898@` |
 | Supervisor | `tena003-a21` | `Mayur9898@` |
 | Agent | `tena003-a20` | `Mayur9898@` |
-| Tenant Admin | *(add when available)* | — |
+| Tenant Admin | *(add when available)* | â€” |
 
 > Credentials are stored in `.env.uat` at the project root.
 > The `USER_ROLE` environment variable automatically selects the correct credential set.
+
+---
+
+## 8. IVR Flow Builder and Diagnostic Commands
+
+The main IVR flow reads nodes, fields, and connections from
+`tests/ivr/config/ivr-flow.config.js`.
+
+### Run the main IVR flow (headed)
+
+```powershell
+npm run test:ivr:headed
+```
+
+### Run the main IVR flow (headless)
+
+```powershell
+npm run test:ivr
+```
+
+### Run all IVR diagnostics (headed)
+
+Diagnostics are isolated from normal regression runs and execute only through the
+`ivr-diagnostics` project.
+
+```powershell
+npm run test:ivr:diagnostics:headed
+```
+
+
+
+### Run all IVR diagnostics (headless)
+
+```powershell
+npm run test:ivr:diagnostics
+```
+ npx playwright test tests/ivr/ivr-flow-builder-authenticated.spec.js --project=chromium-authenticated --headed
+
+### Run one diagnostic file
+
+```powershell
+$env:TEST_ENV="uat"; $env:RUN_IVR_DIAGNOSTICS="true"; npx playwright test tests/ivr/diagnostics/ivr-diagnostic-edges-authenticated.spec.js --project=ivr-diagnostics --workers=1 --headed
+```
+
+Diagnostic files are located in `tests/ivr/diagnostics/`. Authentication setup
+runs automatically because both IVR projects depend on the `setup` project.

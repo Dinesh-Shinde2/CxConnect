@@ -2,6 +2,8 @@ const { defineConfig, devices } = require('@playwright/test');
 const dotenv = require('dotenv');
 const path = require('path');
 
+const diagnosticTests = /ivr[\\/]diagnostics[\\/]/;
+
 // ── Environment Configuration Setup ─────────────────────────────
 // Load environment-specific configuration (e.g. .env.uat, .env.qa, .env.prod)
 // followed by the global .env defaults.
@@ -71,17 +73,17 @@ module.exports = defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: /.*-authenticated\.spec\.js/,
+      testIgnore: [/.*-authenticated\.spec\.js/, diagnosticTests],
     },
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
-      testIgnore: /.*-authenticated\.spec\.js/,
+      testIgnore: [/.*-authenticated\.spec\.js/, diagnosticTests],
     },
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
-      testIgnore: /.*-authenticated\.spec\.js/,
+      testIgnore: [/.*-authenticated\.spec\.js/, diagnosticTests],
     },
     // ── Authenticated Project (Reuses storageState and depends on setup) ──
     {
@@ -93,7 +95,23 @@ module.exports = defineConfig({
       },
       dependencies: ['setup'],
       testMatch: /.*-authenticated\.spec\.js/,
+      testIgnore: diagnosticTests,
     },
+    // Register DOM-inspection/debug specs only for the explicit diagnostics command.
+    ...(process.env.RUN_IVR_DIAGNOSTICS === 'true'
+      ? [{
+        name: 'ivr-diagnostics',
+        testDir: './tests/ivr/diagnostics',
+        testMatch: /.*\.spec\.js/,
+        fullyParallel: false,
+        retries: 0,
+        use: {
+          ...devices['Desktop Chrome'],
+          storageState: 'playwright/.auth/user.json',
+        },
+        dependencies: ['setup'],
+      }]
+      : []),
   ],
 
   /* Folder for test artifacts like screenshots, videos, traces, etc. */

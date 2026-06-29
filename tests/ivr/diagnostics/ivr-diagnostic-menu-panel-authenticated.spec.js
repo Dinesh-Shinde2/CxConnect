@@ -1,10 +1,10 @@
-const { test, expect } = require('../src/fixtures/baseFixture');
+const { test, expect } = require('../../../src/fixtures/baseFixture');
 const fs = require('fs');
 const path = require('path');
 
 test.use({ storageState: 'playwright/.auth/user.json' });
 
-const sessionStoragePath = path.resolve(__dirname, '../playwright/.auth/sessionStorage.json');
+const sessionStoragePath = path.resolve(__dirname, '../../../playwright/.auth/sessionStorage.json');
 let sessionStorageData = '{}';
 try {
   sessionStorageData = fs.readFileSync(sessionStoragePath, 'utf-8');
@@ -12,7 +12,7 @@ try {
   console.warn('[Warning] sessionStorage.json not found.');
 }
 
-test('Diagnostic | Inspect Menu Handles HTML', async ({ page }) => {
+test('Diagnostic | Inspect Menu Properties Form HTML', async ({ page }) => {
   test.setTimeout(60000);
 
   await page.goto('/login');
@@ -30,9 +30,15 @@ test('Diagnostic | Inspect Menu Handles HTML', async ({ page }) => {
   await page.waitForTimeout(5000);
 
   // Click Menu 1 node to open panel
-  const menuNode = page.locator('.react-flow__node-menu').first();
-  const innerHtml = await menuNode.innerHTML();
-  console.log('--- MENU NODE INNER HTML ---');
+  console.log('Clicking Menu 1...');
+  const menuNode = page.locator('.react-flow__node:has-text("Menu 1")').first();
+  await menuNode.click();
+  await page.waitForTimeout(2000);
+
+  // Get the property panel container
+  const panel = page.locator('form#node-config-form, div:has(> form#node-config-form)').first();
+  const innerHtml = await panel.innerHTML();
+  console.log('--- MENU PROPERTY FORM INNER HTML ---');
   console.log(innerHtml);
-  console.log('----------------------------');
+  console.log('-------------------------------------');
 });

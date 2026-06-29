@@ -1,10 +1,10 @@
-const { test, expect } = require('../src/fixtures/baseFixture');
+const { test, expect } = require('../../../src/fixtures/baseFixture');
 const fs = require('fs');
 const path = require('path');
 
 test.use({ storageState: 'playwright/.auth/user.json' });
 
-const sessionStoragePath = path.resolve(__dirname, '../playwright/.auth/sessionStorage.json');
+const sessionStoragePath = path.resolve(__dirname, '../../../playwright/.auth/sessionStorage.json');
 let sessionStorageData = '{}';
 try {
   sessionStorageData = fs.readFileSync(sessionStoragePath, 'utf-8');

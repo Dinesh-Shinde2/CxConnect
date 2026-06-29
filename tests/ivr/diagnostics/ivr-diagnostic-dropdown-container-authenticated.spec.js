@@ -1,16 +1,18 @@
-const { test, expect } = require('../src/fixtures/baseFixture');
+const { test, expect } = require('../../../src/fixtures/baseFixture');
 const fs = require('fs');
 const path = require('path');
 
 test.use({ storageState: 'playwright/.auth/user.json' });
 
-const sessionStoragePath = path.resolve(__dirname, '../playwright/.auth/sessionStorage.json');
+const sessionStoragePath = path.resolve(__dirname, '../../../playwright/.auth/sessionStorage.json');
 let sessionStorageData = '{}';
 try {
   sessionStorageData = fs.readFileSync(sessionStoragePath, 'utf-8');
-} catch (e) {}
+} catch (e) {
+  console.warn('[Warning] sessionStorage.json not found.');
+}
 
-test('Diagnostic | Print trigger parent HTML when dropdown is open', async ({ page }) => {
+test('Diagnostic | Inspect dropdown list container elements', async ({ page }) => {
   test.setTimeout(60000);
 
   await page.goto('/login');
@@ -39,9 +41,20 @@ test('Diagnostic | Print trigger parent HTML when dropdown is open', async ({ pa
   await trigger.click();
   await page.waitForTimeout(2000);
 
-  // Print parent HTML of the trigger
-  const parentHTML = await trigger.locator('xpath=../..').innerHTML();
-  console.log('--- TRIGGER PARENT CONTAINER HTML ---');
-  console.log(parentHTML);
-  console.log('------------------------------------');
+  // Run JS to find elements at the root level of body that appeared and contain the options
+  const bodyChildren = await page.evaluate(() => {
+    // Find all direct children of body or modal-root
+    const roots = Array.from(document.querySelectorAll('body > div, #modal-root > div'));
+    return roots.map(el => ({
+      tag: el.tagName,
+      className: el.className,
+      id: el.id,
+      style: el.getAttribute('style'),
+      outerHtmlExcerpt: el.outerHTML.substring(0, 1000)
+    }));
+  });
+
+  console.log('--- BODY/MODAL-ROOT LEVEL DIVS AFTER CLICK ---');
+  console.log(JSON.stringify(bodyChildren, null, 2));
+  console.log('----------------------------------------------');
 });
