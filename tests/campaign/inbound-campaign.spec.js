@@ -50,7 +50,7 @@ const CAMPAIGN_CONFIG = {
   // ENTER THE DID NUMBER HERE.
   // Known UAT values: '+912269054593', '+912269054596', '+912269054597'
   // Specify exact number as text (e.g., '+912269054596'), or set to null/'first' to pick the first available.
-  did: '+912269054596',              // ← EDIT THIS LINE (e.g. '+912269054596' | null | 'first')
+  did: 'first',              // ← EDIT THIS LINE (e.g. '+912269054596' | null | 'first')
 
   // ── Field 2: Business Hours ───────────────────────────────────────────────
   // ENTER BUSINESS HOURS HERE.
